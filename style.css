@@ -166,7 +166,7 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 .repair { border-top: 1px solid var(--wp-hair); padding-top: var(--wp-4); display: grid; gap: var(--wp-2); font-size: 0.9375rem; line-height: 1.55; }
 .repair .hint { font-size: var(--wp-text-meta); line-height: 1.45; }
 .repair-links { display: flex; flex-wrap: wrap; gap: 0 var(--wp-6); margin: 0; }
-.repair-links a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+.repair-links a { display: inline-flex; align-items: center; min-height: 48px; font-weight: 600; }
 
 /* limits */
 .cannot-see { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--wp-ink); max-width: 40em; }
