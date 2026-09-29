@@ -1,8 +1,8 @@
 {
   "name": "whatsapp-webhook-check",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Local browser-only WhatsApp webhook diagnostic prototype",
+  "description": "Browser-only check for a WhatsApp Trigger in n8n that receives no messages",
   "devDependencies": { "playwright": "^1.56.0" }
 }

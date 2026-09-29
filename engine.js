@@ -37,9 +37,41 @@ function graphProblem(index, response, label) {
       : code === 100
         ? 'Check the WABA, app, and phone IDs against Meta, then retry the read.'
         : 'Resolve the Graph error and retry this read.';
-    return cannotCheck(index, `${label} returned Graph error ${response.error.code ?? 'unknown'} (${explanation}): ${response.error.message ?? 'no message'}.`, fix);
+    return cannotCheck(index, `${label} returned Graph error ${response.error.code ?? 'unknown'} (${explanation}): ${String(response.error.message ?? 'no message').replace(/\.+$/, '')}.`, fix);
   }
   return null;
+}
+
+function ipv4Private(octets) {
+  return octets.some(n => n > 255) || octets[0] === 0 || octets[0] === 10 || octets[0] === 127 || octets[0] >= 224 ||
+    (octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127) || (octets[0] === 169 && octets[1] === 254) ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) || (octets[0] === 192 && octets[1] === 168);
+}
+
+// URL() serialises IPv6 hosts compressed and lower-case inside brackets, e.g. "[fd00::1]".
+function ipv6Private(host) {
+  if (!host.startsWith('[') || !host.endsWith(']')) return false;
+  const [head, tail = ''] = host.slice(1, -1).split('::');
+  const part = text => text ? text.split(':') : [];
+  const left = part(head);
+  const right = part(tail);
+  const words = host.includes('::') ? [...left, ...Array(8 - left.length - right.length).fill('0'), ...right] : left;
+  const n = words.map(word => parseInt(word, 16));
+  if (n.length !== 8 || n.some(Number.isNaN)) return true;
+  if (n.every(word => word === 0) || (n.slice(0, 7).every(word => word === 0) && n[7] === 1)) return true; // :: and ::1
+  if (n.slice(0, 5).every(word => word === 0) && n[5] === 0xffff) return ipv4Private([n[6] >> 8, n[6] & 255, n[7] >> 8, n[7] & 255]); // IPv4-mapped
+  return (n[0] & 0xfe00) === 0xfc00 || // fc00::/7 unique local
+    (n[0] & 0xffc0) === 0xfe80 || // fe80::/10 link-local
+    (n[0] & 0xffc0) === 0xfec0 || // fec0::/10 old site-local
+    (n[0] & 0xff00) === 0xff00 || // ff00::/8 multicast
+    (n[0] === 0x2001 && n[1] === 0x0db8); // 2001:db8::/32 documentation
+}
+
+function privateHost(host) {
+  const octets = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)?.slice(1).map(Number);
+  if (octets) return ipv4Private(octets);
+  if (host.startsWith('[')) return ipv6Private(host);
+  return host === 'localhost' || !host.includes('.') || /\.(localhost|local|internal|lan|home\.arpa)$/.test(host);
 }
 
 function callbackCheck(callbackUrl) {
@@ -48,21 +80,17 @@ function callbackCheck(callbackUrl) {
     return layer(0, 'fail', 'Enter a complete n8n production webhook URL.', String(callbackUrl ?? ''), 'Copy the Production URL from the active n8n workflow.');
   }
   const host = url.hostname.toLowerCase();
-  const octets = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)?.slice(1).map(Number);
-  const privateIp = octets && (octets.some(n => n > 255) || octets[0] === 0 || octets[0] === 10 || octets[0] === 127 || octets[0] >= 224 ||
-    (octets[0] === 169 && octets[1] === 254) || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
-    (octets[0] === 192 && octets[1] === 168));
-  if (url.protocol !== 'https:' || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host === '[::1]' || privateIp) {
+  if (url.protocol !== 'https:' || privateHost(host)) {
     return layer(0, 'fail', 'Callback URL must be public HTTPS, not HTTP or localhost/private network.', url.href, 'Set n8n WEBHOOK_URL to a public HTTPS base URL, restart n8n, and copy its Production URL.');
   }
   if (url.pathname.includes('/webhook-test/')) {
     return layer(0, 'fail', 'Callback URL uses /webhook-test/ instead of /webhook/.', url.href, 'Publish the n8n workflow and use its Production URL under /webhook/.');
   }
-  if (!url.pathname.includes('/webhook/')) {
-    return layer(0, 'fail', 'Callback URL does not contain /webhook/.', url.href, 'Copy the Production URL from the n8n webhook or trigger node.');
-  }
   if (url.username || url.password || url.search || url.hash) {
     return layer(0, 'fail', 'Callback URL has credentials, a query, or a fragment.', url.href, 'Use the plain n8n Production URL without credentials, query, or fragment.');
+  }
+  if (!url.pathname.includes('/webhook/')) {
+    return layer(0, 'warn', 'Callback path is not the n8n default /webhook/. That is expected only if N8N_ENDPOINT_WEBHOOK is set to a custom path.', url.href, 'If you did not set N8N_ENDPOINT_WEBHOOK, copy the Production URL (not the Test URL) from the WhatsApp Trigger node.');
   }
   return layer(0, 'pass', 'Public HTTPS production callback URL has the expected path.', url.href, 'No change needed.');
 }
@@ -82,7 +110,7 @@ function wabaCheck(response, appId, wabaId) {
 
 function subscriptionCheck(response, callbackUrl) {
   if (response === undefined || response === null) {
-    return layer(2, 'not checked', 'Optional app subscription was not checked because no app-token response was supplied.', null, 'Use an app token for this read, or paste its JSON from Graph API Explorer.');
+    return layer(2, 'not checked', 'Optional app subscription was not checked because its JSON was not pasted.', null, 'Run GET /{APP_ID}/subscriptions in Graph API Explorer with an app token and paste the JSON here. Never paste an app secret into this page.');
   }
   const problem = graphProblem(2, response, 'app subscriptions');
   if (problem) return problem;
@@ -90,10 +118,16 @@ function subscriptionCheck(response, callbackUrl) {
   const subs = response.data.filter(item => item?.object === 'whatsapp_business_account');
   if (!subs.length) {
     if (response.paging?.next) return cannotCheck(2, 'No WhatsApp subscription is on this page; more pages exist.', 'Get all subscription pages.');
-    return layer(2, 'fail', 'App has no whatsapp_business_account webhook subscription.', response.data, 'Stop test listening, publish the n8n workflow, then recheck app subscriptions.');
+    return layer(2, 'fail', 'App has no whatsapp_business_account webhook subscription.', response.data, 'Publish the n8n workflow; n8n creates this subscription when the trigger activates. If you just saw the conflict error, n8n may have removed the subscription, so read again after publishing.');
   }
   const matching = subs.find(item => item.callback_url === callbackUrl);
-  if (!matching) return layer(2, 'fail', 'App callback_url differs from the pasted n8n Production URL.', subs.map(({ callback_url }) => ({ callback_url })), 'Stop test listening and republish the n8n workflow so its one app subscription points to the Production URL.');
+  if (!matching) {
+    const registered = subs.map(({ callback_url }) => ({ callback_url }));
+    const ownTestUrl = subs.some(item => typeof item.callback_url === 'string' && item.callback_url.replace('/webhook-test/', '/webhook/') === callbackUrl);
+    if (ownTestUrl) return layer(2, 'fail', 'App callback_url differs from the pasted n8n Production URL: it is this workflow\'s test URL.', registered, 'In the n8n editor stop test listening, then publish the workflow so n8n registers the Production URL.');
+    const held = subs.map(item => item.callback_url).filter(Boolean).join(', ') || 'no URL';
+    return layer(2, 'fail', `App callback_url differs from the pasted n8n Production URL: your app's webhook points to ${held}. n8n reports this as "already has a webhook subscription".`, registered, 'A Meta app holds one WhatsApp webhook. Deactivate the workflow or n8n instance that owns the URL shown (n8n then removes its subscription), or delete the app\'s whatsapp_business_account subscription in App Dashboard > Webhooks. Then publish this workflow. Do not DELETE /{WABA_ID}/subscribed_apps.');
+  }
   const fields = Array.isArray(matching.fields) ? matching.fields.map(field => typeof field === 'string' ? field : field?.name) :
     typeof matching.fields === 'string' ? matching.fields.split(',').map(field => field.trim()) : null;
   if (!fields) return cannotCheck(2, 'Subscription fields are absent or have an unknown shape.', 'Paste the complete GET app subscriptions response, including fields.');
@@ -124,7 +158,27 @@ function challengeCheck(callbackUrl, verifyToken) {
   value.searchParams.set('hub.verify_token', verifyToken || '<VERIFY_TOKEN>');
   value.searchParams.set('hub.challenge', 'webhook-check-123');
   const command = `curl -i ${shellQuote(value.href)}`;
-  return layer(4, 'not checked', 'Run this GET yourself; the page does not contact the callback.', { command, expected: 'HTTP 200 with body exactly webhook-check-123' }, 'If it does not echo the challenge, check the active n8n production webhook and reverse proxy GET route.');
+  const note = verifyToken ? 'Run this GET yourself; the page does not contact the callback.' :
+    'Run this GET yourself after replacing <VERIFY_TOKEN>; the page does not contact the callback.';
+  return layer(4, 'not checked', note, { command, expected: 'HTTP 200 with body exactly webhook-check-123' }, 'The WhatsApp Trigger answers only when hub.verify_token equals its node ID, so a wrong token also gets no echo. With the right token and no echo, check that the workflow is published and that your reverse proxy passes GET requests to /webhook/.');
+}
+
+export function cannotCheckLayer(item) {
+  return item.status === 'not checked' && item.message.startsWith('Cannot check:');
+}
+
+// Layer 3 is optional: when it cannot be read, the phone check still runs.
+function blocks(item) {
+  return item.status === 'fail' || (cannotCheckLayer(item) && item.id !== 3);
+}
+
+// The first layer that needs attention: a failure, or a read that could not be checked.
+export function firstProblem(layers) {
+  return layers.find(item => item.status === 'fail' || cannotCheckLayer(item)) ?? null;
+}
+
+export function firstBlocking(layers) {
+  return layers.find(blocks) ?? null;
 }
 
 export function check(input) {
@@ -140,8 +194,7 @@ export function check(input) {
   ];
   const layers = [];
   for (let i = 0; i < checks.length; i++) {
-    if (layers.some(previous => previous.status === 'fail' ||
-      (previous.status === 'not checked' && previous.message.startsWith('Cannot check:')))) {
+    if (layers.some(blocks)) {
       layers.push(layer(i, 'not checked', 'Not checked because an earlier layer needs attention.', null, 'Resolve the earlier layer first.'));
       continue;
     }

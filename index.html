@@ -3,56 +3,184 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src https://graph.facebook.com; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src https://graph.facebook.com; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>WhatsApp → n8n webhook check</title>
-  <style>
-    body { font: 1rem/1.5 system-ui, sans-serif; max-width: 54rem; margin: 2rem auto; padding: 0 1rem; color: #17232d; }
-    label { display: block; margin: .7rem 0; } input, textarea { display: block; width: 100%; box-sizing: border-box; font: inherit; padding: .4rem; }
-    textarea { min-height: 5rem; } button { font: inherit; padding: .5rem 1rem; cursor: pointer; } fieldset { margin: 1rem 0; }
-    .pass { border-left: .3rem solid #20844b; } .fail { border-left: .3rem solid #b32929; } .not-checked { border-left: .3rem solid #929ca4; }
-    article { padding: .5rem 1rem; margin: .8rem 0; background: #f6f8f9; overflow-wrap: anywhere; }
-    pre { white-space: pre-wrap; overflow-wrap: anywhere; } .notice { background: #fff5dc; padding: .6rem 1rem; }
-  </style>
+  <title>WhatsApp Trigger not receiving messages in n8n · “The WhatsApp App ID already has a webhook subscription” · free webhook check</title>
+  <meta name="description" content="Meta shows the message but the n8n WhatsApp Trigger gets nothing? This free check runs in your browser, reads your WABA link, app webhook and phone number, and names the first broken layer with one fix. No token needed.">
+  <meta property="og:title" content="Find the first broken layer between WhatsApp and n8n">
+  <meta property="og:description" content="A free, browser-only check for a WhatsApp Trigger that gets nothing, or that stops with “already has a webhook subscription”.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/Fraunces144ptSoft-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/IBMPlexSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/IBMPlexSans-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/IBMPlexMono-Regular-Latin1.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/IBMPlexMono-Medium-Latin1.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>WhatsApp → n8n webhook check</h1>
-  <p>Tested on recorded response shapes, not a live WhatsApp account. This page stores nothing and runs entirely in your browser.</p>
-  <p class="notice">Never DELETE <code>/{WABA_ID}/subscribed_apps</code> to clear “already has a webhook subscription.” That can stop delivery. After this error, n8n may delete the app subscription; an empty read taken afterward does not prove there was no conflict.</p>
-  <form id="check-form">
-    <label>WABA ID<input id="waba-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
-    <label>App ID<input id="app-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
-    <label>Phone number ID<input id="phone-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
-    <label>n8n Production URL<input id="callback-url" required type="url" autocomplete="off" placeholder="https://example.com/webhook/..."></label>
-    <label>n8n verify token for optional manual curl<input id="verify-token" autocomplete="off" placeholder="Leave blank to get a placeholder"></label>
-    <fieldset><legend>Input mode</legend>
-      <label><input type="radio" name="mode" value="paste" checked> Paste Graph JSON (no network calls)</label>
-      <label><input type="radio" name="mode" value="token"> Read Graph with tokens (GET only)</label>
-    </fieldset>
-    <div id="paste-fields">
-      <label>GET /{WABA_ID}/subscribed_apps JSON<textarea id="waba-json"></textarea></label>
-      <label>GET /{APP_ID}/subscriptions JSON (optional; app token needed to obtain it)<textarea id="subscriptions-json"></textarea></label>
-      <label>GET /{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name,status,platform_type,code_verification_status JSON<textarea id="phone-json"></textarea></label>
-      <label>GET /{WABA_ID}/phone_numbers JSON (proves WABA membership)<textarea id="waba-phones-json"></textarea></label>
+  <a class="skip" href="#check">Skip to the check</a>
+  <header class="site-header">
+    <div class="wrap">
+      <span class="brand"><img src="assets/mark.svg" alt="" width="28" height="28">CyberNative <span class="product">Webhook check</span></span>
+      <a class="source" href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source</a>
     </div>
-    <div id="token-fields" hidden>
-      <label>User or system access token for WABA and phone reads<input id="user-token" type="password" autocomplete="off"></label>
-      <label>App access token for optional app subscription read<input id="app-token" type="password" autocomplete="off"></label>
-      <p>Tokens are held only during this run, sent as Authorization headers to graph.facebook.com, and never added to a URL or saved.</p>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <p class="label"><b>Free check</b> · runs in your browser</p>
+          <h1>Find the first broken layer between WhatsApp and&nbsp;n8n.</h1>
+          <p class="lede">For a WhatsApp Trigger that gets nothing while Meta shows the event, or that stops with “The WhatsApp App ID … already has a webhook subscription.” Paste what Meta’s Graph API Explorer returns and get one fix for the first broken layer.</p>
+          <p class="limit" id="tested-limit"><span class="label-limit">Limit</span> Tested on recorded response shapes, not a live WhatsApp account.</p>
+          <div class="actions"><a class="btn btn-primary" href="#check">Check my setup</a></div>
+          <ul class="terms">
+            <li>No token needed</li>
+            <li>Stores nothing</li>
+            <li>No analytics, no backend</li>
+          </ul>
+        </div>
+        <figure class="layers-figure" aria-labelledby="layers-caption">
+          <p class="label" id="layers-caption"><b>Five layers</b> · read in order</p>
+          <ol class="layer-map">
+            <li><span class="num">1</span><span><b>Callback URL</b><code>public HTTPS, /webhook/</code></span></li>
+            <li><span class="num">2</span><span><b>WABA → app link</b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
+            <li><span class="num">3</span><span><b>App webhook <i>· optional</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
+            <li><span class="num">4</span><span><b>Phone number</b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
+            <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
+          </ol>
+          <figcaption>The check stops at the first broken layer. It never contacts your n8n and never writes to Meta.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="conflict" id="conflict" aria-labelledby="conflict-title">
+      <div class="wrap">
+        <div>
+          <p class="label"><b>The conflict error</b></p>
+          <h2 id="conflict-title">“The WhatsApp App ID … already has a webhook subscription”</h2>
+        </div>
+        <div class="conflict-body">
+          <p>n8n shows this when your Meta app’s WhatsApp webhook points to a different URL than this workflow. A Meta app holds one WhatsApp webhook, so another workflow, another n8n instance, or this workflow’s own test URL can be holding it.</p>
+          <p>“Delete it” means that app webhook: deactivate the workflow that owns it, or remove the WhatsApp Business Account subscription in App Dashboard › Webhooks. Layer 3 of the check shows which URL your app holds.</p>
+          <div class="warning" id="delete-warning">
+            <p><span class="label-limit">Do not</span> DELETE <code>/{WABA_ID}/subscribed_apps</code> to clear this error. That unlinks your WhatsApp account from your app, and messages stop arriving.</p>
+            <p>After this error, n8n may remove the app webhook itself. An empty <code>/{APP_ID}/subscriptions</code> read taken afterwards does not prove there was no conflict.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool" id="check" aria-labelledby="check-title">
+      <div class="wrap">
+        <div class="tool-head">
+          <p class="label"><b>The check</b></p>
+          <h2 id="check-title">Check your setup</h2>
+          <p class="sub">Everything runs in this tab. In paste mode the page makes no network requests.</p>
+        </div>
+        <div class="tool-grid">
+          <form id="check-form" novalidate>
+            <fieldset class="step">
+              <legend><span class="step-num">1</span> Your IDs and URL</legend>
+              <label class="field" for="waba-id">WhatsApp Business Account ID <span class="hint">Meta App Dashboard › WhatsApp › API Setup.</span></label>
+              <input id="waba-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off" spellcheck="false">
+              <label class="field" for="app-id">App ID <span class="hint">The Client ID in your n8n WhatsApp credential.</span></label>
+              <input id="app-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off" spellcheck="false">
+              <label class="field" for="phone-id">Phone number ID <span class="hint">The ID from API Setup, not the phone number.</span></label>
+              <input id="phone-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off" spellcheck="false">
+              <label class="field" for="callback-url">n8n Production URL <span class="hint">From the WhatsApp Trigger node’s Production URL tab, not the Test URL.</span></label>
+              <input id="callback-url" required type="url" autocomplete="off" spellcheck="false" placeholder="https://n8n.example.com/webhook/…">
+            </fieldset>
+
+            <fieldset class="step">
+              <legend><span class="step-num">2</span> What Meta returns</legend>
+              <div class="modes" role="radiogroup" aria-label="How to read Meta">
+                <label class="mode"><input type="radio" name="mode" value="paste" checked> Paste JSON (no token)</label>
+                <label class="mode"><input type="radio" name="mode" value="token"> Use a token (GET only)</label>
+              </div>
+
+              <div id="paste-fields">
+                <p class="note">Open <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, pick your app, run each read and paste the whole response. Your token stays in Meta’s own tool.</p>
+                <label class="field" for="waba-json">Layer 2 · WABA app link <code class="read" data-read="waba">GET /{WABA_ID}/subscribed_apps</code></label>
+                <textarea id="waba-json" spellcheck="false" placeholder='{"data": [ … ]}'></textarea>
+                <label class="field" for="phone-json">Layer 4 · Phone number <code class="read" data-read="phone">GET /{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name,status,platform_type,code_verification_status</code></label>
+                <textarea id="phone-json" spellcheck="false" placeholder='{"id": "…", "platform_type": "CLOUD_API", … }'></textarea>
+                <label class="field" for="waba-phones-json">Layer 4 · Phones in this WABA <code class="read" data-read="phones">GET /{WABA_ID}/phone_numbers</code></label>
+                <textarea id="waba-phones-json" spellcheck="false" placeholder='{"data": [ … ]}'></textarea>
+              </div>
+
+              <div id="token-fields" hidden>
+                <label class="field" for="user-token">Access token <span class="hint">A user or system-user token with whatsapp_business_management.</span></label>
+                <input id="user-token" type="password" autocomplete="off" spellcheck="false">
+                <p class="note" id="token-note">Your token goes only to graph.facebook.com, in the Authorization header of three GET reads. It is not stored, not put in any URL, and the field is cleared when you run the check.</p>
+              </div>
+
+              <div class="optional">
+                <label class="field" for="subscriptions-json">Layer 3 · App webhook, optional <code class="read" data-read="subscriptions">GET /{APP_ID}/subscriptions</code></label>
+                <p class="hint block" id="layer3-note">This read needs an app token, so run it in Graph API Explorer (choose Get App Token) and paste the JSON. Never paste an app secret or app token into this page.</p>
+                <textarea id="subscriptions-json" spellcheck="false" aria-describedby="layer3-note" placeholder='{"data": [ … ]}'></textarea>
+              </div>
+            </fieldset>
+
+            <div class="step extra">
+              <button type="button" class="disclose" id="verify-toggle" aria-expanded="false" aria-controls="verify-block"><span class="step-num">3</span> Verify token for the challenge curl <span class="hint">optional</span></button>
+              <div id="verify-block" hidden>
+                <label class="field" for="verify-token">Verify token <span class="hint">The WhatsApp Trigger uses its node ID. Copy the node in n8n and paste it into a text editor to see its id. Leave blank for a placeholder.</span></label>
+                <input id="verify-token" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <p class="form-error" id="form-error" role="alert" hidden></p>
+            <button class="btn btn-primary submit" type="submit">Find the broken layer</button>
+          </form>
+
+          <aside class="result" aria-labelledby="result-label">
+            <p class="label" id="result-label"><b>Result</b></p>
+            <p id="summary" role="status" class="verdict empty">Nothing checked yet. Results appear here, layer by layer.</p>
+            <div id="fix"></div>
+            <ol id="results" class="ledger"></ol>
+            <div id="feedback" class="feedback" hidden>
+              <p class="feedback-q">Did this find your problem?</p>
+              <div class="feedback-actions">
+                <a class="btn btn-quiet" id="feedback-yes" target="_blank" rel="noopener noreferrer" href="#">Yes</a>
+                <a class="btn btn-quiet" id="feedback-no" target="_blank" rel="noopener noreferrer" href="#">No</a>
+              </div>
+              <p class="hint block">Opens a public GitHub issue, pre-filled with only the layer result. You decide whether to submit it.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="limits" aria-labelledby="limits-title">
+      <div class="wrap">
+        <div>
+          <p class="label"><b>Limits</b></p>
+          <h2 id="limits-title">What this cannot see</h2>
+        </div>
+        <div>
+          <ul class="cannot-see">
+            <li>Whether your Meta app is in Development or Live mode.</li>
+            <li>The test-recipient allowlist.</li>
+            <li>Whether the App Secret in your n8n WhatsApp credential matches your Meta app. n8n drops events whose signature does not match, without an error.</li>
+            <li>Whether a proxy or tunnel accepts the GET challenge but blocks webhook POSTs.</li>
+            <li>Instagram settings.</li>
+          </ul>
+          <p class="after-list">A clean result here does not prove that webhook POSTs reach n8n.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><b>CyberNative AI LLC</b> — An autonomous AI company. Run by AI agents, owned by one human, shipped in public.</p>
+      <p class="muted">Not affiliated with Meta, WhatsApp or n8n.</p>
+      <p class="links"><a href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source</a> <a href="https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new" target="_blank" rel="noopener noreferrer">Report a wrong result</a></p>
     </div>
-    <button type="submit">Check layers</button>
-  </form>
-  <p id="summary" role="status"></p>
-  <div id="results"></div>
-  <section>
-    <h2>What this cannot see</h2>
-    <ul>
-      <li>Whether the Meta app is in Development or Live mode.</li>
-      <li>The test-recipient allowlist.</li>
-      <li>Whether a proxy accepts the GET challenge but blocks webhook POSTs.</li>
-      <li>Instagram settings.</li>
-    </ul>
-  </section>
+  </footer>
   <script type="module" src="./page.js"></script>
 </body>
 </html>
