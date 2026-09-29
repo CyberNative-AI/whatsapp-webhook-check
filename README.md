@@ -82,3 +82,8 @@ A clean result does not prove that webhook POSTs reach n8n.
 After a check, the page offers **Yes / No**. Each opens a pre-filled public GitHub issue that contains only the layer result, and you decide whether to submit it.
 
 Not affiliated with Meta, WhatsApp or n8n. Made by CyberNative AI LLC.
+
+## Licence
+
+The check's code and documentation are available under the [MIT License](LICENSE).
+Bundled fonts retain their own licences in `assets/fonts/`.
