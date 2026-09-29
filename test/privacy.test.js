@@ -245,6 +245,47 @@ test('token mode: a phone override is read in the same 3 GETs and its removal is
   } finally { await context.close(); }
 });
 
+const WABA_OVERRIDE = { data: [{ whatsapp_business_api_data: { id: '2002', name: 'Example App' }, override_callback_uri: 'https://override.example.org/webhook' }] };
+const phoneWith = phoneNumber => ({ ...fixture.responses.phone, webhook_configuration: { phone_number: phoneNumber, whatsapp_business_account: 'https://override.example.org/webhook', application: 'https://n8n.example.com/webhook/abc' } });
+
+test('token mode: a WABA override does not stop the check before the phone read; phone = URL finds nothing broken', async () => {
+  const { context, page, external } = await newPage(WABA_OVERRIDE, 'https://n8n.example.com/webhook/abc', phoneWith('https://n8n.example.com/webhook/abc'));
+  try {
+    const requests = [];
+    page.on('request', request => requests.push({ method: request.method(), url: request.url() }));
+    await page.getByLabel('Use a token (GET only)').check();
+    await page.fill('#user-token', 'test-user-token');
+    await page.getByRole('button', { name: 'Find the broken layer' }).click();
+    await page.getByText(ALL_CLEAR, { exact: false }).waitFor();
+    assert.equal(requests.length, 3, JSON.stringify(requests));
+    assert.ok(requests.every(item => item.method === 'GET'));
+    const result = await page.locator('.result').innerText();
+    assert.match(result, /does not route this number, because the phone number has its own override/);
+    assert.ok(!result.includes('subscribed_apps with no body'), 'no WABA removal is offered');
+    assert.deepEqual(external, []);
+    await assertNoStorage(page, context);
+  } finally { await context.close(); }
+});
+
+test('token mode: with both overrides elsewhere, the first broken layer is 4 and the fix is the phone removal', async () => {
+  const { context, page, external } = await newPage(WABA_OVERRIDE, 'https://n8n.example.com/webhook/abc', phoneWith('https://override.example.org/phone-webhook'));
+  try {
+    const requests = [];
+    page.on('request', request => requests.push({ method: request.method(), url: request.url() }));
+    await page.getByLabel('Use a token (GET only)').check();
+    await page.fill('#user-token', 'test-user-token');
+    await page.getByRole('button', { name: 'Find the broken layer' }).click();
+    await page.getByText('Broken at layer 4', { exact: false }).waitFor();
+    assert.equal(requests.length, 3, JSON.stringify(requests));
+    assert.ok(requests.every(item => item.method === 'GET'));
+    const fix = await page.locator('.one-fix').innerText();
+    assert.ok(fix.includes(`-d '{"webhook_configuration":{"override_callback_uri":""}}'`));
+    assert.ok(!(await page.locator('.result').innerText()).includes('subscribed_apps with no body'));
+    assert.deepEqual(external, []);
+    await assertNoStorage(page, context);
+  } finally { await context.close(); }
+});
+
 // Feedback canaries: every verdict path, in both modes, with distinctive synthetic inputs.
 // The prefilled issue may hold only fixed text; none of these values may reach it, raw, decoded or encoded.
 const C = {

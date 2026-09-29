@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = await readFile(new URL('./engine.js', import.meta.url), 'utf8');
-const original = '() => wabaCheck(responses.wabaApps, appId, wabaId, callbackUrl),';
+const original = '() => wabaCheck(responses.wabaApps, appId, wabaId, callbackUrl, phoneOverrideOf(responses.phone, phoneNumberId)),';
 assert.ok(source.includes(original), 'negative control mutation target exists');
 const mutant = source.replace(original, "() => layer(1, 'pass', 'Disabled', null, 'No change needed.'),");
 const { check } = await import(`data:text/javascript;base64,${Buffer.from(mutant).toString('base64')}`);

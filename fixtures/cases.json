@@ -92,5 +92,17 @@
     "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
     "overrides": {"responses.phone.webhook_configuration": {"application": "https://n8n.example.com/webhook/abc"}},
     "expected": {"id": null, "message": "No failure"}
+  },
+  {
+    "name": "phone override is the Production URL, WABA override elsewhere",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.wabaApps": {"data": [{"whatsapp_business_api_data": {"id": "2002", "link": "https://www.facebook.com/games/?app_id=2002", "name": "Example App"}, "override_callback_uri": "https://override.example.org/webhook"}]}, "responses.phone.webhook_configuration": {"phone_number": "https://n8n.example.com/webhook/abc", "whatsapp_business_account": "https://override.example.org/webhook", "application": "https://n8n.example.com/webhook/abc"}},
+    "expected": {"id": null, "message": "No failure"}
+  },
+  {
+    "name": "phone and WABA overrides both elsewhere",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.wabaApps": {"data": [{"whatsapp_business_api_data": {"id": "2002", "link": "https://www.facebook.com/games/?app_id=2002", "name": "Example App"}, "override_callback_uri": "https://override.example.org/webhook"}]}, "responses.phone.webhook_configuration": {"phone_number": "https://override.example.org/phone-webhook", "whatsapp_business_account": "https://override.example.org/webhook", "application": "https://n8n.example.com/webhook/abc"}},
+    "expected": {"id": 4, "message": "override URL, https://override.example.org/phone-webhook"}
   }
 ]

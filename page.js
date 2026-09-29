@@ -1,4 +1,4 @@
-import { check, cannotCheckLayer, firstBlocking, GRAPH_ORIGIN, GRAPH_VERSION } from './engine.js';
+import { check, cannotCheckLayer, firstBlocking, waitsForPhoneRead, GRAPH_ORIGIN, GRAPH_VERSION } from './engine.js';
 
 const ISSUES_URL = 'https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new';
 const PAGE_VERSION = '1.0.0';
@@ -237,7 +237,9 @@ form.addEventListener('submit', async event => {
       if (firstBlocking(check(input))?.id === 1) { render(check(input)); showResult(); return; }
       if (!userToken) { summary.textContent = 'Enter an access token, or switch to Paste JSON.'; return; }
       input.responses.wabaApps = await graphGet(`${input.wabaId}/subscribed_apps`, userToken);
-      if (firstBlocking(check(input))?.id <= 3) { userToken = ''; render(check(input)); showResult(); return; }
+      const blocking = firstBlocking(check(input));
+      // A WABA override is judged only after the phone read, because a phone override comes first.
+      if (blocking?.id <= 3 && !waitsForPhoneRead(blocking)) { userToken = ''; render(check(input)); showResult(); return; }
       input.responses.phone = await graphGet(`${input.phoneNumberId}?fields=${PHONE_FIELDS}`, userToken);
       if (!input.responses.phone?.error) input.responses.wabaPhones = await graphGet(`${input.wabaId}/phone_numbers`, userToken);
       userToken = '';

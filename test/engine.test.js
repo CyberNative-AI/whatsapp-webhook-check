@@ -200,3 +200,46 @@ test('with no override fields, layers 2 and 4 behave as before and claim nothing
   assert.match(layers[3].message, /no webhook_configuration, so the phone override was not read/);
   assert.doesNotMatch(layers[3].message, /no override URL/);
 });
+
+// Precedence: Meta uses the phone override first, so a WABA override only decides routing when the phone has none.
+const phoneConfig = phoneNumber => ({ ...(phoneNumber ? { phone_number: phoneNumber } : {}), whatsapp_business_account: ELSEWHERE, application: PRODUCTION });
+
+test('phone override = Production URL and WABA override elsewhere: layer 2 is not broken and no WABA removal is offered', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE), 'responses.phone.webhook_configuration': phoneConfig(PRODUCTION) } }));
+  assert.equal(layers[1].status, 'pass');
+  assert.match(layers[1].message, /does not route this number, because the phone number has its own override \(layer 4\)/);
+  assert.ok(layers.every(item => !/subscribed_apps with no body/.test(item.fix)), 'the WABA-removal POST is never offered');
+  assert.equal(layers[3].status, 'pass');
+  assert.equal(firstProblem(layers), null);
+});
+
+test('phone and WABA overrides both elsewhere: the first broken layer is 4 and its fix is the phone removal', () => {
+  const PHONE_ELSEWHERE = 'https://override.example.org/phone-webhook';
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE), 'responses.phone.webhook_configuration': phoneConfig(PHONE_ELSEWHERE) } }));
+  assert.equal(layers[1].status, 'pass');
+  assert.equal(firstBlocking(layers).id, 4);
+  assert.ok(layers[3].message.includes(PHONE_ELSEWHERE));
+  assert.ok(layers[3].fix.includes(`-d '{"webhook_configuration":{"override_callback_uri":""}}'`));
+  assert.ok(layers[3].fix.includes(`the WABA override, ${ELSEWHERE}, which is not your n8n Production URL either`), 'names where messages go next');
+  assert.ok(layers.every(item => !/subscribed_apps with no body/.test(item.fix)));
+});
+
+test('webhook_configuration read without a phone override leaves a WABA override elsewhere broken at layer 2', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE), 'responses.phone.webhook_configuration': phoneConfig(null) } }));
+  assert.equal(firstBlocking(layers).id, 2);
+  assert.match(layers[1].message, /and this phone number has no override of its own\.$/);
+  assert.match(layers[1].fix, /POST \/1001\/subscribed_apps with no body/);
+});
+
+test('webhook_configuration not read leaves a WABA override elsewhere broken at layer 2 and says the phone override was not read', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE) } }));
+  assert.equal(firstBlocking(layers).id, 2);
+  assert.match(layers[1].message, /the phone read has no webhook_configuration, so it was not read \(layer 4\)/);
+});
+
+test('a phone override on a phone read that errors or names another ID does not overturn the WABA verdict', () => {
+  for (const phone of [{ error: { code: 100, message: 'x' } }, { ...base.responses.phone, id: '4444', webhook_configuration: phoneConfig(PRODUCTION) }]) {
+    const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE), 'responses.phone': phone } }));
+    assert.equal(firstBlocking(layers).id, 2);
+  }
+});
