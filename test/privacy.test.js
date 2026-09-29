@@ -340,7 +340,7 @@ function feedbackLeaks(href) {
   return [...new Set(found)];
 }
 
-const REPAIR_PAGE = 'https://cybernative.ai/services/automation-repair/';
+const REPAIR_PAGE = 'https://cybernative.ai/services/automation-repair/?ref=ce6';
 const REPAIR_SUBJECT = 'Workflow repair: WhatsApp webhook check';
 const REPAIR_MAILTO = `mailto:hello@cybernative.ai?subject=${encodeURIComponent(REPAIR_SUBJECT)}&body=${encodeURIComponent('What the workflow should do:\n\n\nWhat happens instead:\n\n\nRemove credentials from the workflow export before you attach it. Use redacted or made-up records. Never send tokens or keys.')}`;
 function repairLeaks(href) {
