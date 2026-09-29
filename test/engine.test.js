@@ -138,3 +138,65 @@ test('public IPv4 and IPv6 callback hosts pass layer 1', () => {
     assert.equal(layers[0].status, 'pass', host);
   }
 });
+
+const PRODUCTION = base.callbackUrl;
+const ELSEWHERE = 'https://override.example.org/webhook';
+const wabaWithOverride = uri => ({ data: [{ whatsapp_business_api_data: { id: '2002', name: 'Example App' }, override_callback_uri: uri }] });
+
+test('a WABA override to another URL breaks layer 2 and names that URL', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(ELSEWHERE) } }));
+  assert.equal(layers[1].status, 'fail');
+  assert.ok(layers[1].message.includes(ELSEWHERE));
+  assert.equal(firstBlocking(layers).id, 2);
+  assert.match(layers[1].fix, /moves messages away from whatever set it/);
+  assert.match(layers[1].fix, /POST \/1001\/subscribed_apps with no body/);
+  assert.match(layers[1].fix, /curl -X POST 'https:\/\/graph\.facebook\.com\/v25\.0\/1001\/subscribed_apps' -H 'Authorization: Bearer <USER_ACCESS_TOKEN>'$/, 'the removal POST carries no body');
+});
+
+test('an override on another app in the WABA does not break layer 2', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': { data: [
+    { whatsapp_business_api_data: { id: '2002', name: 'Example App' } },
+    { whatsapp_business_api_data: { id: '9999', name: 'Other App' }, override_callback_uri: ELSEWHERE },
+  ] } } }));
+  assert.equal(layers[1].status, 'pass');
+});
+
+test('a WABA override equal to the Production URL passes layer 2', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.wabaApps': wabaWithOverride(PRODUCTION) } }));
+  assert.equal(layers[1].status, 'pass');
+  assert.match(layers[1].message, /override URL is your n8n Production URL/);
+  assert.equal(firstProblem(layers), null);
+});
+
+test('a phone override to another URL breaks layer 4 with the user-run removal', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.phone.webhook_configuration': { phone_number: ELSEWHERE, application: PRODUCTION } } }));
+  assert.deepEqual(layers.slice(0, 3).map(item => item.status), ['pass', 'pass', 'pass']);
+  assert.equal(layers[3].status, 'fail');
+  assert.ok(layers[3].message.includes(ELSEWHERE));
+  assert.match(layers[3].fix, /moves messages away from whatever set it/);
+  assert.ok(layers[3].fix.includes(`-d '{"webhook_configuration":{"override_callback_uri":""}}'`));
+  assert.ok(layers[3].fix.includes("curl -X POST 'https://graph.facebook.com/v25.0/3003'"));
+});
+
+test('a phone override is found even when optional layer 3 cannot be checked', () => {
+  const layers = check(withOverrides({ overrides: {
+    'responses.appSubscriptions': { error: { code: 190, message: 'Invalid OAuth access token.' } },
+    'responses.phone.webhook_configuration': { phone_number: ELSEWHERE, application: PRODUCTION },
+  } }));
+  assert.equal(layers[2].status, 'not checked');
+  assert.equal(firstBlocking(layers).id, 4);
+});
+
+test('a phone override equal to the Production URL passes layer 4', () => {
+  const layers = check(withOverrides({ overrides: { 'responses.phone.webhook_configuration': { phone_number: PRODUCTION, application: PRODUCTION } } }));
+  assert.equal(layers[3].status, 'pass');
+  assert.match(layers[3].message, /override URL is your n8n Production URL/);
+});
+
+test('with no override fields, layers 2 and 4 behave as before and claim nothing about overrides', () => {
+  const layers = check(withOverrides({}));
+  assert.deepEqual(layers.map(item => item.status), ['pass', 'pass', 'pass', 'pass', 'not checked']);
+  assert.equal(firstProblem(layers), null);
+  assert.match(layers[3].message, /no webhook_configuration, so the phone override was not read/);
+  assert.doesNotMatch(layers[3].message, /no override URL/);
+});

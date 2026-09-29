@@ -2,7 +2,7 @@ import { check, cannotCheckLayer, firstBlocking, GRAPH_ORIGIN, GRAPH_VERSION } f
 
 const ISSUES_URL = 'https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new';
 const PAGE_VERSION = '1.0.0';
-const PHONE_FIELDS = 'display_phone_number,verified_name,status,platform_type,code_verification_status';
+const PHONE_FIELDS = 'display_phone_number,verified_name,status,platform_type,code_verification_status,webhook_configuration';
 
 const byId = id => document.getElementById(id);
 const form = byId('check-form');

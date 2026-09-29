@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src https://graph.facebook.com; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
   <title>WhatsApp Trigger not receiving messages in n8n · “The WhatsApp App ID already has a webhook subscription” · free webhook check</title>
-  <meta name="description" content="Meta shows the message but the n8n WhatsApp Trigger gets nothing? This free check runs in your browser, reads your WABA link, app webhook and phone number, and names the first broken layer with one fix. No token needed.">
+  <meta name="description" content="Meta shows the message but the n8n WhatsApp Trigger gets nothing? This free check runs in your browser, reads your WABA link, app webhook, phone number and any override URLs, and names the first broken layer with one fix. No token needed.">
   <meta property="og:title" content="Find the first broken layer between WhatsApp and n8n">
   <meta property="og:description" content="A free, browser-only check for a WhatsApp Trigger that gets nothing, or that stops with “already has a webhook subscription”.">
   <meta property="og:type" content="website">
@@ -46,12 +46,12 @@
           <p class="label" id="layers-caption"><b>Five layers</b> · read in order</p>
           <ol class="layer-map">
             <li><span class="num">1</span><span><b>Callback URL</b><code>public HTTPS, /webhook/</code></span></li>
-            <li><span class="num">2</span><span><b>WABA → app link</b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
+            <li><span class="num">2</span><span><b>WABA → app link <i>· WABA override</i></b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
             <li><span class="num">3</span><span><b>App webhook <i>· optional</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
-            <li><span class="num">4</span><span><b>Phone number</b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
+            <li><span class="num">4</span><span><b>Phone number <i>· phone override</i></b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
             <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
           </ol>
-          <figcaption>The check stops at the first broken layer. It never contacts your n8n and never writes to Meta.</figcaption>
+          <figcaption>Meta sends messages to a phone-number override URL first, then a WABA override, and only then to your app’s webhook, so the check reads both overrides. It stops at the first broken layer, never contacts your n8n and never writes to Meta.</figcaption>
         </figure>
       </div>
     </section>
@@ -105,7 +105,7 @@
                 <p class="note">Open <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, pick your app, run each read and paste the whole response. Your token stays in Meta’s own tool.</p>
                 <label class="field" for="waba-json">Layer 2 · WABA app link <code class="read" data-read="waba">GET /{WABA_ID}/subscribed_apps</code></label>
                 <textarea id="waba-json" spellcheck="false" placeholder='{"data": [ … ]}'></textarea>
-                <label class="field" for="phone-json">Layer 4 · Phone number <code class="read" data-read="phone">GET /{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name,status,platform_type,code_verification_status</code></label>
+                <label class="field" for="phone-json">Layer 4 · Phone number <code class="read" data-read="phone">GET /{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name,status,platform_type,code_verification_status,webhook_configuration</code></label>
                 <textarea id="phone-json" spellcheck="false" placeholder='{"id": "…", "platform_type": "CLOUD_API", … }'></textarea>
                 <label class="field" for="waba-phones-json">Layer 4 · Phones in this WABA <code class="read" data-read="phones">GET /{WABA_ID}/phone_numbers</code></label>
                 <textarea id="waba-phones-json" spellcheck="false" placeholder='{"data": [ … ]}'></textarea>

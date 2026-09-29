@@ -10,10 +10,12 @@ Paste the JSON that Meta's Graph API Explorer returns. The page reads five layer
 
 ## What it checks
 
+Meta sends `messages` webhooks to the phone number's override URL if it has one, then to the WABA's override URL for your app, and only then to your app's webhook ([Meta: webhook overrides](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/)). So the page reads both overrides as well as the app webhook.
+
 1. **Callback URL.** Your n8n Production URL must be public HTTPS: not HTTP, localhost, a private IPv4 or IPv6 address, or a host without a public domain. It must not be the `/webhook-test/` URL. A path other than `/webhook/` gets a warning, because that is expected only when `N8N_ENDPOINT_WEBHOOK` is set.
-2. **WABA → app link.** `GET /{WABA_ID}/subscribed_apps` must list your app. If it does not, the page shows the `POST /{WABA_ID}/subscribed_apps` for you to run. The page never sends it.
+2. **WABA → app link and WABA override.** `GET /{WABA_ID}/subscribed_apps` must list your app. The page also reads your app's `override_callback_uri` in that response: an override that is not your n8n Production URL is broken, because messages go there instead. For a missing link or an override elsewhere, the page shows a `POST /{WABA_ID}/subscribed_apps` with no body for you to run; with no body it also removes the override. Removing an override moves messages away from whatever set it. The page never sends the POST.
 3. **App webhook, optional.** `GET /{APP_ID}/subscriptions` must hold a `whatsapp_business_account` subscription with the `messages` field and your Production URL. If this read errors or is missing, the layer is marked "cannot check" and layer 4 still runs.
-4. **Phone number.** The phone number ID must be in `GET /{WABA_ID}/phone_numbers` and on the Cloud API.
+4. **Phone number and phone override.** The phone number ID must be in `GET /{WABA_ID}/phone_numbers` and on the Cloud API. The phone read also asks for `webhook_configuration`: a `phone_number` override that is not your n8n Production URL is broken, and the page shows the `POST /{PHONE_NUMBER_ID}` that clears it, for you to run. If a pasted response has no `webhook_configuration`, the page makes no claim about the phone override.
 5. **Challenge.** The page prints a `hub.challenge` curl for you to run. It never contacts your n8n.
 
 ## “already has a webhook subscription”
@@ -51,9 +53,15 @@ node --test negative-control.mjs
 - token mode sends only GETs to the pinned Graph host, with the token only in the Authorization header;
 - paste mode sends no requests after the page loads;
 - neither mode writes to localStorage, sessionStorage or cookies;
-- the feedback links carry no IDs, URLs or tokens.
+- the feedback links carry no IDs, URLs, tokens, names, phone numbers, verify tokens, commands or JSON, on every verdict path in both modes (distinctive canary inputs, checked raw, decoded and percent-encoded).
 
 The second command must fail with `empty subscribed_apps must fail at layer 2`. It disables layer 2 in an in-memory copy of the engine to show that the normal suite would catch a missing check.
+
+```sh
+FEEDBACK_LEAK_CONTROL=1 node --test --test-name-pattern=feedback test/privacy.test.js
+```
+
+This must also fail. It serves a copy of `page.js` that appends the pasted callback URL to the feedback issue, to show that the canary tests would catch a leak.
 
 ## Limits
 

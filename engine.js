@@ -95,17 +95,26 @@ function callbackCheck(callbackUrl) {
   return layer(0, 'pass', 'Public HTTPS production callback URL has the expected path.', url.href, 'No change needed.');
 }
 
-function wabaCheck(response, appId, wabaId) {
+// Meta routes messages to the phone number's override URL, then the WABA's override for this app, then the app callback.
+function wabaCheck(response, appId, wabaId, callbackUrl) {
   const problem = graphProblem(1, response, 'subscribed_apps');
   if (problem) return problem;
   if (!Array.isArray(response.data)) return cannotCheck(1, 'subscribed_apps has no data array.', 'Paste the complete GET subscribed_apps response.');
-  const apps = response.data.map(item => item?.whatsapp_business_api_data ?? item).filter(item => item && typeof item === 'object');
-  if (apps.some(item => String(item.id) === String(appId))) {
-    return layer(1, 'pass', 'The WABA lists this app.', apps.map(({ id, name }) => ({ id, name })), 'No change needed.');
+  const entries = response.data.filter(item => item && typeof item === 'object');
+  const apps = entries.map(item => item.whatsapp_business_api_data ?? item).filter(item => item && typeof item === 'object');
+  const listed = apps.map(({ id, name }) => ({ id, name }));
+  const own = entries.find(item => String((item.whatsapp_business_api_data ?? item)?.id) === String(appId));
+  const post = `curl -X POST ${shellQuote(`${GRAPH_ORIGIN}/${wabaId}/subscribed_apps`)} -H 'Authorization: Bearer <USER_ACCESS_TOKEN>'`;
+  if (own) {
+    const override = own.override_callback_uri;
+    if (override && override !== callbackUrl) {
+      return layer(1, 'fail', `The WABA sends this app's messages to an override URL, ${override}, not to your n8n Production URL.`, { apps: listed, override_callback_uri: override },
+        `Removing the override moves messages away from whatever set it, back to your app's webhook (layer 3). If you want them in n8n, POST /${wabaId}/subscribed_apps with no body in Graph API Explorer, or run: ${post}`);
+    }
+    return layer(1, 'pass', override ? 'The WABA lists this app, and its override URL is your n8n Production URL.' : 'The WABA lists this app, with no override URL.', override ? { apps: listed, override_callback_uri: override } : listed, 'No change needed.');
   }
   if (response.paging?.next) return cannotCheck(1, 'The app was not on this page of subscribed_apps; more pages exist.', 'Get all pages of subscribed_apps before concluding the app is absent.');
-  const post = `curl -X POST ${shellQuote(`${GRAPH_ORIGIN}/${wabaId}/subscribed_apps`)} -H 'Authorization: Bearer <USER_ACCESS_TOKEN>'`;
-  return layer(1, 'fail', `WABA does not list app ${appId} in subscribed_apps.`, apps.map(({ id, name }) => ({ id, name })), `In Graph API Explorer select your app and POST /${wabaId}/subscribed_apps, or run: ${post}`);
+  return layer(1, 'fail', `WABA does not list app ${appId} in subscribed_apps.`, listed, `In Graph API Explorer select your app and POST /${wabaId}/subscribed_apps, or run: ${post}`);
 }
 
 function subscriptionCheck(response, callbackUrl) {
@@ -136,7 +145,7 @@ function subscriptionCheck(response, callbackUrl) {
   return layer(2, 'pass', 'App subscription has the Production URL and messages field.', { callback_url: matching.callback_url, fields, active: matching.active }, 'No change needed.');
 }
 
-function phoneCheck(phone, wabaPhones, phoneNumberId) {
+function phoneCheck(phone, wabaPhones, phoneNumberId, callbackUrl) {
   const detailProblem = graphProblem(3, phone, 'phone number');
   if (detailProblem) return detailProblem;
   if (String(phone.id) !== String(phoneNumberId)) return cannotCheck(3, 'Phone response ID does not match the supplied phone number ID.', 'Paste the response for the supplied phone number ID.');
@@ -149,7 +158,17 @@ function phoneCheck(phone, wabaPhones, phoneNumberId) {
   }
   if (!phone.platform_type) return cannotCheck(3, 'Phone response has no platform_type.', 'Request the phone number with platform_type in fields.');
   if (phone.platform_type !== 'CLOUD_API') return layer(3, 'fail', 'Phone number is not on the Cloud API.', phone.platform_type, 'Use a Cloud API phone number in this WABA.');
-  return layer(3, 'pass', 'Phone number belongs to this WABA and uses Cloud API.', { id: phone.id, display_phone_number: phone.display_phone_number, verified_name: phone.verified_name, status: phone.status, platform_type: phone.platform_type, code_verification_status: phone.code_verification_status }, 'No change needed.');
+  const config = phone.webhook_configuration;
+  const override = config && typeof config === 'object' ? config.phone_number : undefined;
+  if (override && override !== callbackUrl) {
+    const body = '{"webhook_configuration":{"override_callback_uri":""}}';
+    const post = `curl -X POST ${shellQuote(`${GRAPH_ORIGIN}/${phoneNumberId}`)} -H 'Authorization: Bearer <USER_ACCESS_TOKEN>' -H 'Content-Type: application/json' -d ${shellQuote(body)}`;
+    return layer(3, 'fail', `This phone number sends its messages to an override URL, ${override}, not to your n8n Production URL.`, { id: phone.id, webhook_configuration: config },
+      `Removing the override moves messages away from whatever set it, to the WABA override or your app's webhook. If you want them in n8n, POST /${phoneNumberId} with ${body} in Graph API Explorer, or run: ${post}`);
+  }
+  const overrideNote = !config ? ' The pasted JSON has no webhook_configuration, so the phone override was not read.' :
+    override ? ' Its override URL is your n8n Production URL.' : ' It has no override URL.';
+  return layer(3, 'pass', `Phone number belongs to this WABA and uses Cloud API.${overrideNote}`, { id: phone.id, display_phone_number: phone.display_phone_number, verified_name: phone.verified_name, status: phone.status, platform_type: phone.platform_type, code_verification_status: phone.code_verification_status, ...(config ? { webhook_configuration: config } : {}) }, 'No change needed.');
 }
 
 function challengeCheck(callbackUrl, verifyToken) {
@@ -187,9 +206,9 @@ export function check(input) {
   if (ids.some(id => !/^\d+$/.test(String(id ?? '')))) throw new Error('WABA, app, and phone number IDs must contain digits only.');
   const checks = [
     () => callbackCheck(callbackUrl),
-    () => wabaCheck(responses.wabaApps, appId, wabaId),
+    () => wabaCheck(responses.wabaApps, appId, wabaId, callbackUrl),
     () => subscriptionCheck(responses.appSubscriptions, callbackUrl),
-    () => phoneCheck(responses.phone, responses.wabaPhones, phoneNumberId),
+    () => phoneCheck(responses.phone, responses.wabaPhones, phoneNumberId, callbackUrl),
     () => challengeCheck(callbackUrl, verifyToken),
   ];
   const layers = [];

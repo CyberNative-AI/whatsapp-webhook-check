@@ -68,5 +68,29 @@
     "sources": ["Meta Graph API error format: https://developers.facebook.com/docs/graph-api/guides/error-handling/"],
     "overrides": { "responses.wabaApps": { "error": { "message": "Unsupported get request", "type": "GraphMethodException", "code": 100 } } },
     "expected": { "id": 2, "message": "Cannot check: subscribed_apps returned Graph error 100", "status": "not checked" }
+  },
+  {
+    "name": "WABA override to another URL",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.wabaApps": {"data": [{"whatsapp_business_api_data": {"id": "2002", "link": "https://www.facebook.com/games/?app_id=2002", "name": "Example App"}, "override_callback_uri": "https://override.example.org/webhook"}]}},
+    "expected": {"id": 2, "message": "override URL, https://override.example.org/webhook"}
+  },
+  {
+    "name": "WABA override is the Production URL",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.wabaApps": {"data": [{"whatsapp_business_api_data": {"id": "2002", "link": "https://www.facebook.com/games/?app_id=2002", "name": "Example App"}, "override_callback_uri": "https://n8n.example.com/webhook/abc"}]}},
+    "expected": {"id": null, "message": "No failure"}
+  },
+  {
+    "name": "phone override to another URL",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.phone.webhook_configuration": {"phone_number": "https://override.example.org/phone-webhook", "application": "https://n8n.example.com/webhook/abc"}},
+    "expected": {"id": 4, "message": "override URL, https://override.example.org/phone-webhook"}
+  },
+  {
+    "name": "phone read with no override",
+    "sources": ["Meta webhook overrides (routing order, response shapes, removal): https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/override/"],
+    "overrides": {"responses.phone.webhook_configuration": {"application": "https://n8n.example.com/webhook/abc"}},
+    "expected": {"id": null, "message": "No failure"}
   }
 ]
