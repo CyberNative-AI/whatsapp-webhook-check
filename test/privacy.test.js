@@ -22,12 +22,22 @@ const ALL_CLEAR = 'No broken layer found in what could be checked';
 // Leak control: FEEDBACK_LEAK_CONTROL=1 serves a page.js that appends the pasted callback URL to the
 // feedback issue body. The feedback canary tests below must then fail.
 const LEAK_TARGET = "url.searchParams.set('body', body);";
+// Repair leak control: REPAIR_LEAK_CONTROL=1 serves a page.js that appends the pasted callback URL to the
+// repair mailto when a result is shown. The repair canary assertions below must then fail.
+const REPAIR_LEAK_TARGET = '  repair.hidden = false;\n';
 async function servedSource(file) {
   const content = await readFile(new URL(`../${file}`, import.meta.url));
-  if (file !== 'page.js' || process.env.FEEDBACK_LEAK_CONTROL !== '1') return content;
-  const source = content.toString('utf8');
-  assert.ok(source.includes(LEAK_TARGET), 'leak control mutation target exists');
-  return source.replace(LEAK_TARGET, "url.searchParams.set('body', `${body}\\n${byId('callback-url').value}`);");
+  if (file !== 'page.js') return content;
+  let source = content.toString('utf8');
+  if (process.env.FEEDBACK_LEAK_CONTROL === '1') {
+    assert.ok(source.includes(LEAK_TARGET), 'leak control mutation target exists');
+    source = source.replace(LEAK_TARGET, "url.searchParams.set('body', `${body}\\n${byId('callback-url').value}`);");
+  }
+  if (process.env.REPAIR_LEAK_CONTROL === '1') {
+    assert.ok(source.includes(REPAIR_LEAK_TARGET), 'repair leak control mutation target exists');
+    source = source.replace(REPAIR_LEAK_TARGET, `${REPAIR_LEAK_TARGET}  byId('repair-mail').href += encodeURIComponent(\`\\n\${byId('callback-url').value}\`);\n`);
+  }
+  return source;
 }
 
 let server;
@@ -330,6 +340,19 @@ function feedbackLeaks(href) {
   return [...new Set(found)];
 }
 
+const REPAIR_PAGE = 'https://cybernative.ai/services/automation-repair/';
+const REPAIR_SUBJECT = 'Workflow repair: WhatsApp webhook check';
+const REPAIR_MAILTO = `mailto:hello@cybernative.ai?subject=${encodeURIComponent(REPAIR_SUBJECT)}&body=${encodeURIComponent('What the workflow should do:\n\n\nWhat happens instead:\n\n\nRemove credentials from the workflow export before you attach it. Use redacted or made-up records. Never send tokens or keys.')}`;
+function repairLeaks(href) {
+  const forms = [href, decodeURIComponent(href)];
+  const found = [];
+  for (const value of Object.values(C)) {
+    for (const needle of [value, encodeURIComponent(value), encodeURIComponent(value).replaceAll('%20', '+')]) if (forms.some(form => form.includes(needle))) found.push(value);
+  }
+  if (forms.some(form => /curl|hub\.challenge|hub\.verify_token|"data"|callback_url|override_callback_uri|webhook_configuration|https?:\/\//.test(form))) found.push('command, JSON or URL');
+  return [...new Set(found)];
+}
+
 async function feedbackFor(input, mode) {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -361,16 +384,53 @@ async function feedbackFor(input, mode) {
     await page.fill('#verify-token', C.verify);
     await page.getByRole('button', { name: 'Find the broken layer' }).click();
     await page.waitForSelector('#feedback:not([hidden])', { timeout: 5000 });
-    return { summary: (await page.innerText('#summary')).split('\n')[0], yes: await page.getAttribute('#feedback-yes', 'href'), no: await page.getAttribute('#feedback-no', 'href') };
+    return {
+      summary: (await page.innerText('#summary')).split('\n')[0], yes: await page.getAttribute('#feedback-yes', 'href'), no: await page.getAttribute('#feedback-no', 'href'),
+      repairVisible: await page.isVisible('#repair'), mail: await page.getAttribute('#repair-mail', 'href'), repairPage: await page.getAttribute('#repair-page', 'href'),
+    };
   } finally { await context.close(); }
 }
 
 for (const { name, input } of canaryCases) {
   for (const mode of ['paste', 'token']) {
-    test(`feedback URL carries no canary: ${name} [${mode}]`, async t => {
+    test(`feedback and repair links carry no canary: ${name} [${mode}]`, async t => {
       const result = await feedbackFor(input, mode);
       t.diagnostic(`${name} [${mode}] -> ${result.summary}`);
       for (const href of [result.yes, result.no]) assert.deepEqual(feedbackLeaks(href), [], `leak in ${href}`);
+      assert.equal(result.repairVisible, true, 'the repair route is shown after every result');
+      assert.deepEqual(repairLeaks(result.mail), [], `leak in the repair mailto ${result.mail}`);
+      assert.equal(result.mail, REPAIR_MAILTO, 'the repair mailto is fixed text only');
+      assert.equal(result.repairPage, REPAIR_PAGE);
     });
   }
 }
+
+test('repair route: hidden before a result, then one quiet line after a fix and on cannot check', async () => {
+  const { context, page } = await newPage({ data: [] });
+  try {
+    assert.equal(await page.isVisible('#repair'), false, 'no repair route before a check runs');
+    await page.fill('#waba-json', '{"data": []}');
+    await page.getByRole('button', { name: 'Find the broken layer' }).click();
+    await page.getByText('Broken at layer 2', { exact: false }).waitFor();
+    assert.equal(await page.isVisible('.one-fix'), true);
+    assert.equal(await page.isVisible('#repair'), true, 'shown after a fix');
+    const order = await page.evaluate(() => ['#summary', '#fix', '#feedback', '#repair'].map(sel => document.querySelector(sel)).every((node, i, all) => !i || all[i - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
+    assert.ok(order, 'the repair route comes after the verdict, the fix and the feedback question');
+    const text = await page.innerText('#repair');
+    assert.match(text, /reproduce the failure first, and if we can’t, you pay nothing/);
+    assert.match(text, /fixed price and an acceptance test that passes on your side/);
+    assert.match(text, /never tokens or keys/);
+    assert.match(text, /Meta-side causes, such as an account in review or a disabled number, are outside repair/);
+    assert.doesNotMatch(text, /\$|\bdays?\b|hours?|guarantee/i, 'no price or time promise');
+    assert.equal(await page.getAttribute('#repair-mail', 'href'), REPAIR_MAILTO);
+    assert.equal(new URL(await page.getAttribute('#repair-mail', 'href')).searchParams.get('subject'), REPAIR_SUBJECT);
+    assert.equal(await page.getAttribute('#repair-page', 'href'), REPAIR_PAGE);
+    assert.equal(await page.getAttribute('#repair-page', 'target'), '_blank', 'the result stays open');
+
+    await page.fill('#waba-json', '{"error": {"code": 190, "message": "Invalid OAuth access token."}}');
+    await page.getByRole('button', { name: 'Find the broken layer' }).click();
+    await page.getByText('Cannot check layer 2', { exact: false }).waitFor();
+    assert.equal(await page.isVisible('#repair'), true, 'shown on cannot check');
+    assert.equal(await page.getAttribute('#repair-mail', 'href'), REPAIR_MAILTO);
+  } finally { await context.close(); }
+});

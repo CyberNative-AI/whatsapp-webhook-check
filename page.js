@@ -10,6 +10,7 @@ const results = byId('results');
 const summary = byId('summary');
 const fixBox = byId('fix');
 const feedback = byId('feedback');
+const repair = byId('repair');
 const formError = byId('form-error');
 
 function el(tag, className, text) {
@@ -186,6 +187,7 @@ function render(layers) {
   byId('feedback-yes').href = feedbackUrl(true, layers, verdict);
   byId('feedback-no').href = feedbackUrl(false, layers, verdict);
   feedback.hidden = false;
+  repair.hidden = false;
 }
 
 function showError(message, field) {
@@ -226,6 +228,7 @@ form.addEventListener('submit', async event => {
   results.replaceChildren();
   fixBox.replaceChildren();
   feedback.hidden = true;
+  repair.hidden = true;
   try {
     if (!tokenMode) {
       Object.assign(input.responses, {

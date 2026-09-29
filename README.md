@@ -53,7 +53,8 @@ node --test negative-control.mjs
 - token mode sends only GETs to the pinned Graph host, with the token only in the Authorization header;
 - paste mode sends no requests after the page loads;
 - neither mode writes to localStorage, sessionStorage or cookies;
-- the feedback links carry no IDs, URLs, tokens, names, phone numbers, verify tokens, commands or JSON, on every verdict path in both modes (distinctive canary inputs, checked raw, decoded and percent-encoded).
+- the feedback links carry no IDs, URLs, tokens, names, phone numbers, verify tokens, commands or JSON, on every verdict path in both modes (distinctive canary inputs, checked raw, decoded and percent-encoded);
+- the repair email link is the same fixed text on every one of those paths, and the repair route appears only after a result.
 
 The second command must fail with `empty subscribed_apps must fail at layer 2`. It disables layer 2 in an in-memory copy of the engine to show that the normal suite would catch a missing check.
 
@@ -62,6 +63,12 @@ FEEDBACK_LEAK_CONTROL=1 node --test --test-name-pattern=feedback test/privacy.te
 ```
 
 This must also fail. It serves a copy of `page.js` that appends the pasted callback URL to the feedback issue, to show that the canary tests would catch a leak.
+
+```sh
+REPAIR_LEAK_CONTROL=1 node --test test/privacy.test.js
+```
+
+This must fail on every repair test, and only on those. It serves a copy of `page.js` that appends the pasted callback URL to the repair email link. (Run the whole file: with `--test-name-pattern=repair` no browser test starts, so every test is cancelled rather than checked.)
 
 ## Limits
 
@@ -80,6 +87,8 @@ A clean result does not prove that webhook POSTs reach n8n.
 ## Did it find your problem?
 
 After a check, the page offers **Yes / No**. Each opens a pre-filled public GitHub issue that contains only the layer result, and you decide whether to submit it.
+
+If you are still stuck, the page also links to [workflow repair](https://cybernative.ai/services/automation-repair/) and to an email with a fixed subject and body. Neither carries anything you entered.
 
 Not affiliated with Meta, WhatsApp or n8n. Made by CyberNative AI LLC.
 
