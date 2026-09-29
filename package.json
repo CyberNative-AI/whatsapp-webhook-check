@@ -1,0 +1,8 @@
+{
+  "name": "whatsapp-webhook-check",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Local browser-only WhatsApp webhook diagnostic prototype",
+  "devDependencies": { "playwright": "^1.56.0" }
+}

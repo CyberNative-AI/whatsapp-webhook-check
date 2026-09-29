@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src https://graph.facebook.com; form-action 'none'; base-uri 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>WhatsApp → n8n webhook check</title>
+  <style>
+    body { font: 1rem/1.5 system-ui, sans-serif; max-width: 54rem; margin: 2rem auto; padding: 0 1rem; color: #17232d; }
+    label { display: block; margin: .7rem 0; } input, textarea { display: block; width: 100%; box-sizing: border-box; font: inherit; padding: .4rem; }
+    textarea { min-height: 5rem; } button { font: inherit; padding: .5rem 1rem; cursor: pointer; } fieldset { margin: 1rem 0; }
+    .pass { border-left: .3rem solid #20844b; } .fail { border-left: .3rem solid #b32929; } .not-checked { border-left: .3rem solid #929ca4; }
+    article { padding: .5rem 1rem; margin: .8rem 0; background: #f6f8f9; overflow-wrap: anywhere; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; } .notice { background: #fff5dc; padding: .6rem 1rem; }
+  </style>
+</head>
+<body>
+  <h1>WhatsApp → n8n webhook check</h1>
+  <p>Tested on recorded response shapes, not a live WhatsApp account. This page stores nothing and runs entirely in your browser.</p>
+  <p class="notice">Never DELETE <code>/{WABA_ID}/subscribed_apps</code> to clear “already has a webhook subscription.” That can stop delivery. After this error, n8n may delete the app subscription; an empty read taken afterward does not prove there was no conflict.</p>
+  <form id="check-form">
+    <label>WABA ID<input id="waba-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
+    <label>App ID<input id="app-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
+    <label>Phone number ID<input id="phone-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
+    <label>n8n Production URL<input id="callback-url" required type="url" autocomplete="off" placeholder="https://example.com/webhook/..."></label>
+    <label>n8n verify token for optional manual curl<input id="verify-token" autocomplete="off" placeholder="Leave blank to get a placeholder"></label>
+    <fieldset><legend>Input mode</legend>
+      <label><input type="radio" name="mode" value="paste" checked> Paste Graph JSON (no network calls)</label>
+      <label><input type="radio" name="mode" value="token"> Read Graph with tokens (GET only)</label>
+    </fieldset>
+    <div id="paste-fields">
+      <label>GET /{WABA_ID}/subscribed_apps JSON<textarea id="waba-json"></textarea></label>
+      <label>GET /{APP_ID}/subscriptions JSON (optional; app token needed to obtain it)<textarea id="subscriptions-json"></textarea></label>
+      <label>GET /{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name,status,platform_type,code_verification_status JSON<textarea id="phone-json"></textarea></label>
+      <label>GET /{WABA_ID}/phone_numbers JSON (proves WABA membership)<textarea id="waba-phones-json"></textarea></label>
+    </div>
+    <div id="token-fields" hidden>
+      <label>User or system access token for WABA and phone reads<input id="user-token" type="password" autocomplete="off"></label>
+      <label>App access token for optional app subscription read<input id="app-token" type="password" autocomplete="off"></label>
+      <p>Tokens are held only during this run, sent as Authorization headers to graph.facebook.com, and never added to a URL or saved.</p>
+    </div>
+    <button type="submit">Check layers</button>
+  </form>
+  <p id="summary" role="status"></p>
+  <div id="results"></div>
+  <section>
+    <h2>What this cannot see</h2>
+    <ul>
+      <li>Whether the Meta app is in Development or Live mode.</li>
+      <li>The test-recipient allowlist.</li>
+      <li>Whether a proxy accepts the GET challenge but blocks webhook POSTs.</li>
+      <li>Instagram settings.</li>
+    </ul>
+  </section>
+  <script type="module" src="./page.js"></script>
+</body>
+</html>

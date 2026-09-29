@@ -1,0 +1,72 @@
+[
+  {
+    "name": "healthy",
+    "sources": [
+      "Meta published WABA app shape: https://www.postman.com/meta/whatsapp-business-platform/documentation/3kru5r6/moved-whatsapp-business-management-api",
+      "Meta WABA phone list: https://www.postman.com/meta/whatsapp-business-platform/request/86mq7mn/get-phone-numbers",
+      "App subscription fields are a recorded-shape synthesis of https://community.n8n.io/t/316729"
+    ],
+    "input": { "wabaId": "1001", "appId": "2002", "phoneNumberId": "3003", "callbackUrl": "https://n8n.example.com/webhook/abc", "responses": { "wabaApps": { "data": [{ "whatsapp_business_api_data": { "id": "2002", "name": "Example App" } }] }, "appSubscriptions": { "data": [{ "object": "whatsapp_business_account", "callback_url": "https://n8n.example.com/webhook/abc", "fields": [{ "name": "messages" }], "active": true }] }, "phone": { "id": "3003", "display_phone_number": "+1 555 0100", "verified_name": "Example", "status": "CONNECTED", "platform_type": "CLOUD_API", "code_verification_status": "VERIFIED" }, "wabaPhones": { "data": [{ "id": "3003", "display_phone_number": "+1 555 0100" }] } } },
+    "expected": { "id": null, "message": "No failure" }
+  },
+  {
+    "name": "empty subscribed_apps",
+    "sources": ["Empty data quoted in https://community.n8n.io/t/316532", "DELETE consequence in https://community.n8n.io/t/309424"],
+    "overrides": { "responses.wabaApps": { "data": [] } },
+    "expected": { "id": 2, "message": "WABA does not list app 2002" }
+  },
+  {
+    "name": "only another app",
+    "sources": ["Other app example in https://community.n8n.io/t/316532", "Nested ID follows Meta: https://www.postman.com/meta/whatsapp-business-platform/documentation/3kru5r6/moved-whatsapp-business-management-api"],
+    "overrides": { "responses.wabaApps": { "data": [{ "whatsapp_business_api_data": { "id": "9999", "name": "WA DevX Webhook Events" } }] } },
+    "expected": { "id": 2, "message": "WABA does not list app 2002" }
+  },
+  {
+    "name": "localhost http callback",
+    "sources": ["Callback failure and WEBHOOK_URL fix in https://community.n8n.io/t/305439"],
+    "overrides": { "callbackUrl": "http://localhost:5678/webhook/abc" },
+    "expected": { "id": 1, "message": "Callback URL must be public HTTPS" }
+  },
+  {
+    "name": "http public callback",
+    "sources": ["HTTPS requirement described in https://community.n8n.io/t/305439"],
+    "overrides": { "callbackUrl": "http://n8n.example.com/webhook/abc" },
+    "expected": { "id": 1, "message": "Callback URL must be public HTTPS" }
+  },
+  {
+    "name": "test callback",
+    "sources": ["Test vs production conflict in https://community.n8n.io/t/316729"],
+    "overrides": { "callbackUrl": "https://n8n.example.com/webhook-test/abc" },
+    "expected": { "id": 1, "message": "Callback URL uses /webhook-test/" }
+  },
+  {
+    "name": "missing messages field",
+    "sources": ["Messages subscription advice in https://community.n8n.io/t/309424", "App subscription behavior in https://community.n8n.io/t/316729"],
+    "overrides": { "responses.appSubscriptions": { "data": [{ "object": "whatsapp_business_account", "callback_url": "https://n8n.example.com/webhook/abc", "fields": [{ "name": "message_template_status_update" }], "active": true }] } },
+    "expected": { "id": 3, "message": "App subscription is missing the messages field" }
+  },
+  {
+    "name": "different registered callback",
+    "sources": ["One subscription per app and different callback in https://community.n8n.io/t/316729"],
+    "overrides": { "responses.appSubscriptions": { "data": [{ "object": "whatsapp_business_account", "callback_url": "https://n8n.example.com/webhook-test/abc", "fields": ["messages"], "active": true }] } },
+    "expected": { "id": 3, "message": "App callback_url differs" }
+  },
+  {
+    "name": "phone outside WABA",
+    "sources": ["Meta WABA phone list membership: https://www.postman.com/meta/whatsapp-business-platform/request/86mq7mn/get-phone-numbers", "Phone ID mismatch case: https://community.n8n.io/t/306382"],
+    "overrides": { "responses.wabaPhones": { "data": [{ "id": "4444", "display_phone_number": "+1 555 0101" }] } },
+    "expected": { "id": 4, "message": "Phone number is not in the supplied WABA" }
+  },
+  {
+    "name": "Graph error 190",
+    "sources": ["Meta Graph API error format: https://developers.facebook.com/docs/graph-api/guides/error-handling/"],
+    "overrides": { "responses.wabaApps": { "error": { "message": "Error validating access token", "type": "OAuthException", "code": 190 } } },
+    "expected": { "id": 2, "message": "Cannot check: subscribed_apps returned Graph error 190", "status": "not checked" }
+  },
+  {
+    "name": "Graph error 100",
+    "sources": ["Meta Graph API error format: https://developers.facebook.com/docs/graph-api/guides/error-handling/"],
+    "overrides": { "responses.wabaApps": { "error": { "message": "Unsupported get request", "type": "GraphMethodException", "code": 100 } } },
+    "expected": { "id": 2, "message": "Cannot check: subscribed_apps returned Graph error 100", "status": "not checked" }
+  }
+]
