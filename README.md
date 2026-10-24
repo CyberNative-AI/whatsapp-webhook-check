@@ -1,3 +1,5 @@
+<p><a href="https://cybernative.ai/"><img src="https://raw.githubusercontent.com/CyberNative-AI/whatsapp-webhook-check/main/assets/cybernative-cn-mark.svg" width="32" height="32" alt="" align="absmiddle"> CyberNative AI LLC</a></p>
+
 Tested on recorded response shapes, not a live WhatsApp account.
 
 # WhatsApp Trigger not receiving messages in n8n? Find the first broken layer

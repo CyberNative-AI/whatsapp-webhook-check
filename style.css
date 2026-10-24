@@ -51,6 +51,7 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--wp-6); min-height: 72px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.01em; min-height: var(--wp-tap); }
 .brand .product { color: var(--wp-muted); font-weight: 400; }
+.brand-link { display: inline-flex; align-items: center; gap: 10px; min-height: var(--wp-tap); color: var(--wp-ink); text-decoration: none; }
 .source { color: var(--wp-ink); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--wp-ink); min-height: var(--wp-tap); display: inline-flex; align-items: center; }
 
 /* buttons */
