@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src https://graph.facebook.com; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
   <title>WhatsApp Trigger not receiving messages in n8n · “The WhatsApp App ID already has a webhook subscription” · free webhook check</title>
-  <meta name="description" content="Meta shows the message but the n8n WhatsApp Trigger gets nothing? This free check runs in your browser, reads your WABA link, app webhook, phone number and any override URLs, and names the first broken layer with one fix. No token needed.">
+  <meta name="description" content="Meta shows the message but the n8n WhatsApp Trigger gets nothing? This free check runs in your browser, reads your WABA link, app webhook, phone number and any override URLs, and names the first broken layer with one fix. Paste mode needs no token.">
   <meta property="og:title" content="Find the first broken layer between WhatsApp and n8n">
   <meta property="og:description" content="A free, browser-only check for a WhatsApp Trigger that gets nothing, or that stops with “already has a webhook subscription”.">
   <meta property="og:type" content="website">
@@ -46,9 +46,9 @@
             <p class="sample-fix"><span class="sample-key">One fix</span> In the n8n editor stop test listening, then publish the workflow so n8n registers the Production URL.</p>
           </div>
           <p class="limit" id="tested-limit"><span class="label-limit">Limit</span> Tested on recorded response shapes, not a live WhatsApp account.</p>
-          <p class="reads">The three reads, run in Meta’s Graph API Explorer: <code>GET /{WABA_ID}/subscribed_apps</code>, <code>GET /{PHONE_NUMBER_ID}</code> and <code>GET /{WABA_ID}/phone_numbers</code>. WABA is your WhatsApp Business Account.</p>
+          <p class="reads">The three reads, run in Meta’s Graph API Explorer: <code>GET /{WABA_ID}/subscribed_apps</code>, <code>GET /{PHONE_NUMBER_ID}</code> and <code>GET /{WABA_ID}/phone_numbers</code>. Layer 3 adds an optional fourth, <code>GET /{APP_ID}/subscriptions</code>, which needs an app token. WABA is your WhatsApp Business Account.</p>
           <ul class="terms">
-            <li>Paste mode: your token never comes here</li>
+            <li>Paste mode: your token stays in Meta’s tool</li>
             <li>Stores nothing</li>
             <li>No analytics, no backend</li>
           </ul>
@@ -67,14 +67,14 @@
             <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
           </ol>
           <figcaption>
-            <p class="label"><b>Delivery order</b> · the order Meta delivers in</p>
+            <p class="label"><b>Delivery order</b> · how Meta routes a message</p>
             <p class="why">Meta sends each message to the first URL in this list that is set.</p>
             <ol class="route">
               <li>A phone-number override URL, if one is set</li>
               <li>A WABA override URL, if one is set</li>
               <li>Your app’s webhook</li>
             </ol>
-            <p>So an override takes messages away from your app’s webhook, and the check reads both overrides. It never contacts your n8n and never writes to Meta.</p>
+            <p>So a set override gets the messages instead of your app’s webhook. That is why the check reads both overrides. It never contacts your n8n and never writes to Meta.</p>
           </figcaption>
         </figure>
       </div>
