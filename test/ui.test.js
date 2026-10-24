@@ -286,6 +286,35 @@ test('first screen: an example result, the maker and Source on GitHub; the weekl
   }
 });
 
+// Every line of the byline link takes a 48 px tap: the rect and the hit test at its top and bottom edge both say so.
+const bylineTargets = page => page.evaluate(() => {
+  const a = document.querySelector('.maker a');
+  return [...a.getClientRects()].map(r => {
+    const hits = y => { const e = document.elementFromPoint(r.left + Math.min(r.width / 2, 40), y); return !!e && a.contains(e); };
+    return { height: r.height, top: hits(r.top + 1), bottom: hits(r.bottom - 1) };
+  });
+});
+
+test('48 px targets: the byline on every line and the header link; at 320 the header shows "GitHub" clear of the wordmark', async () => {
+  for (const width of [320, 390, 1440]) {
+    const { context, page } = await open(width);
+    try {
+      await page.evaluate(() => document.fonts.ready);
+      const lines = await bylineTargets(page);
+      if (width === 320) assert.equal(lines.length, 2, 'the byline wraps at 320');
+      for (const line of lines) assert.ok(line.height >= 48 && line.top && line.bottom, `${width}: ${JSON.stringify(line)}`);
+      const header = page.getByRole('banner').getByRole('link', { name: 'Source on GitHub', exact: true });
+      const box = await header.boundingBox();
+      assert.ok(box.height >= 48, `${width}: header link ${box.height} px`);
+      const wordmark = await page.locator('.wordmark').boundingBox();
+      assert.ok(box.x - (wordmark.x + wordmark.width) >= 16, `${width}: ${box.x - (wordmark.x + wordmark.width)} px between wordmark and link`);
+      const pre = await page.locator('.site-header .source-pre').boundingBox();
+      assert.equal(pre.width > 1, width >= 360, `${width}: "Source on" shown only from 360 px`);
+      assert.equal(await overflow(page), 0);
+    } finally { await context.close(); }
+  }
+});
+
 test('the example result gives way to a real result, and returns when the form is cleared', async () => {
   const { context, page } = await open(390);
   try {

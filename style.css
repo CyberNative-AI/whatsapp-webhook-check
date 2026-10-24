@@ -73,7 +73,7 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .brand-link:hover { color: var(--oa-blue); }
 .wordmark { font: 600 1.5rem/1 var(--wp-font-display); letter-spacing: -0.054em; }
 .brand .product { color: var(--oa-muted); font-weight: 500; padding-left: 14px; border-left: 1px solid var(--oa-line); white-space: nowrap; }
-.source { color: var(--oa-paper); font-weight: 500; text-decoration: none; white-space: nowrap; min-height: var(--wp-tap); display: inline-flex; align-items: center; border-bottom: 2px solid var(--oa-blue); }
+.source { color: var(--oa-paper); font-weight: 500; text-decoration: none; white-space: nowrap; min-height: var(--wp-tap); display: inline-flex; align-items: center; gap: 0.25em; border-bottom: 2px solid var(--oa-blue); }
 .source:hover { color: var(--oa-blue); }
 
 /* buttons: graphite pill with paper type; hover is blue-deep */
@@ -95,6 +95,11 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--wp-3); }
 /* Byline under the headline: who made the tool. */
 .maker { margin-top: calc(-1 * var(--wp-3)); font-size: var(--wp-text-meta); font-weight: 500; }
+/* The byline link is inline: padding grows its hit area to 48 px on each line, and the matching negative inline margin
+   keeps the text and its wrapping where they were. The focus ring is pulled back to 2 px around the text so it stays
+   clear of the h1 and the lede. */
+.maker a { padding: 15px; margin-inline: -15px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.maker a:focus-visible { outline-offset: -13px; }
 /* A static sample of the recorded example's real output. Dashed and tagged so it never reads as the visitor's own
    result; page.js hides it once a real result renders. */
 .sample { max-width: 36em; display: grid; gap: var(--wp-2); padding: var(--wp-3) var(--wp-4); border: 1px dashed var(--wp-muted); border-radius: var(--wp-radius); background: var(--wp-panel); }
@@ -320,4 +325,8 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 /* The hero label names the product, so on a phone the header keeps room for "Source on GitHub". */
 @media (max-width: 480px) {
   .brand .product { display: none; }
+}
+/* At 320 the wordmark and "Source on GitHub" touch: show "GitHub", keep "Source on GitHub" as the link's name. */
+@media (max-width: 359px) {
+  .source-pre { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 }
