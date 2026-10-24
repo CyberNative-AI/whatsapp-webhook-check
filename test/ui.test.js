@@ -472,23 +472,111 @@ test('W1: the example panel shows the recorded inputs word for word, the failing
   const blocking = firstBlocking(check(E));
   const { context, page } = await open(1440);
   try {
-    const lines = await page.$$eval('#sample-result .sample-reads li', lis => lis.map(li => ({
-      layer: li.dataset.sampleLayer, read: li.querySelector('.sr-read').textContent, value: li.querySelector('.sr-value').textContent,
+    const rows = await page.$$eval('#sample-result .sample-reads li', lis => lis.map(li => ({
+      layer: li.dataset.sampleLayer, tag: li.querySelector('.sr-num').textContent,
+      reads: [...li.querySelectorAll('.sr-pair')].map(p => [p.querySelector('.sr-read').textContent, p.querySelector('.sr-value').textContent]),
       broken: li.classList.contains('is-broken'), mark: li.querySelector('.sr-mark')?.textContent ?? null })));
-    assert.deepEqual(lines, [
-      { layer: '1', read: 'n8n Production URL', value: E.callbackUrl, broken: false, mark: null },
-      { layer: '2', read: `GET /${E.wabaId}/subscribed_apps`, value: `"id": "${R.wabaApps.data[0].whatsapp_business_api_data.id}"`, broken: false, mark: null },
-      { layer: '3', read: `GET /${E.appId}/subscriptions`, value: `"callback_url": "${R.appSubscriptions.data[0].callback_url}"`, broken: true, mark: 'Broken' },
-      { layer: '4', read: `GET /${E.phoneNumberId}?fields=…`, value: `"platform_type": "${R.phone.platform_type}"`, broken: false, mark: null },
-      { layer: '4', read: `GET /${E.wabaId}/phone_numbers`, value: `"id": "${R.wabaPhones.data[0].id}"`, broken: false, mark: null },
+    assert.deepEqual(rows, [
+      { layer: '1', tag: 'Layer 1', reads: [['n8n Production URL', E.callbackUrl]], broken: false, mark: null },
+      { layer: '2', tag: 'Layer 2', reads: [[`GET /${E.wabaId}/subscribed_apps`, `"id": "${R.wabaApps.data[0].whatsapp_business_api_data.id}"`]], broken: false, mark: null },
+      { layer: '3', tag: 'Layer 3', reads: [[`GET /${E.appId}/subscriptions`, `"callback_url": "${R.appSubscriptions.data[0].callback_url}"`]], broken: true, mark: 'Broken' },
+      // Layer 4: the phone_numbers read supplies the id, so it comes first, then the read of that id.
+      { layer: '4', tag: 'Layer 4', reads: [
+        [`GET /${E.wabaId}/phone_numbers`, `"id": "${R.wabaPhones.data[0].id}"`],
+        [`GET /${E.phoneNumberId}?fields=…`, `"platform_type": "${R.phone.platform_type}"`],
+      ], broken: false, mark: null },
     ]);
+    assert.equal(R.wabaPhones.data[0].id, E.phoneNumberId, 'the second layer 4 read uses the id the first returns');
     assert.equal(blocking.id, 3, 'the marked read is the layer the engine stops at');
     assert.ok(R.appSubscriptions, 'the example includes the fourth response');
-    assert.match(await page.textContent('#sample-result .sample-inputs .sample-key'), /this example includes the fourth response/);
+    assert.equal((await page.textContent('#sample-result .sample-inputs .sample-key')).replace(/\s+/g, ' ').trim(), 'What it was given, by layer · includes the optional fourth read (layer 3)');
     // Each line's read is one the page asks for.
     const reads = await page.$$eval('code.read', cs => cs.map(c => c.dataset.read));
     assert.deepEqual(reads, ['waba', 'phone', 'phones', 'subscriptions']);
   } finally { await context.close(); }
+});
+
+test('W3: the example lists each layer once, tagged with a word, never a bare number', async () => {
+  const { context, page } = await open(390);
+  try {
+    const tags = await page.$$eval('#sample-result .sample-reads li', lis => lis.map(li => [li.dataset.sampleLayer, li.querySelector('.sr-num').textContent]));
+    assert.deepEqual(tags, [['1', 'Layer 1'], ['2', 'Layer 2'], ['3', 'Layer 3'], ['4', 'Layer 4']]);
+    // Layer 4's two reads sit in one row: the tag spans both, and the second read is below the first.
+    const box = sel => page.locator(`#sample-result li[data-sample-layer="4"] ${sel}`).first().boundingBox();
+    const pairs = await page.locator('#sample-result li[data-sample-layer="4"] .sr-pair').evaluateAll(ps => ps.map(p => p.getBoundingClientRect().top));
+    assert.equal(pairs.length, 2);
+    assert.ok(pairs[1] > pairs[0]);
+    const tag = await box('.sr-num'), first = await box('.sr-pair');
+    assert.ok(tag.x + tag.width <= first.x, 'the tag stays left of the reads');
+  } finally { await context.close(); }
+  // At 320 the tag goes above its reads, so no read wraps.
+  const narrow = await open(320);
+  try {
+    const lines = await narrow.page.$$eval('#sample-result .sr-read', rs => rs.map(r => Math.round(r.getBoundingClientRect().height / parseFloat(getComputedStyle(r).lineHeight))));
+    assert.deepEqual(lines, [1, 1, 1, 1, 1]);
+  } finally { await narrow.context.close(); }
+});
+
+test('W4: the layer map says the page checks 1 to 4 and you run 5, a curl the result writes even without a verify token', async () => {
+  const { check } = await import('../engine.js');
+  const { appSubscriptions, ...three } = RECORDED_EXAMPLE.responses;
+  // A run that reaches layer 5 with no verify token still writes the curl, with a placeholder token.
+  const passing = { ...RECORDED_EXAMPLE, callbackUrl: 'https://n8n.example.com/webhook/abc', verifyToken: '', responses: three };
+  const five = check(passing)[4];
+  assert.equal(five.status, 'not checked');
+  assert.match(five.evidence.command, /^curl -i '.*hub\.verify_token=%3CVERIFY_TOKEN%3E/);
+  const { context, page } = await open(1440);
+  try {
+    const text = sel => page.textContent(sel).then(t => t.replace(/\s+/g, ' ').trim());
+    assert.equal(await text('#layers-caption'), 'Five layers · the page checks 1–4; you run 5');
+    assert.equal(await text('.layer-map li:last-child code'), 'a curl the result writes for you to run');
+  } finally { await context.close(); }
+  // At 390 the caption's tail moves to the next line whole, so no word sits alone on a line.
+  const narrow = await open(390);
+  try {
+    const lines = await narrow.page.$eval('#layers-caption .tail', e => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e.parentElement).lineHeight)));
+    assert.equal(lines, 1);
+  } finally { await narrow.context.close(); }
+});
+
+test('two-part lines: the "·" sits where plain text puts it when both parts share a line, and is hidden when the tail starts its own line', async () => {
+  const seen = new Set();
+  for (const width of [320, 390, 1440]) {
+    const { context, page } = await open(width);
+    try {
+      const rows = await page.$$eval('.sep-wrap', els => els.map(el => {
+        el.scrollIntoView({ block: 'center' });
+        const box = el.getBoundingClientRect(), tail = el.querySelector('.tail'), sep = tail.querySelector('.sep').getBoundingClientRect();
+        const firstGlyph = node => { const r = document.createRange(); r.setStart(node, 0); r.setEnd(node, 1); return r.getClientRects()[0]; };
+        const word = firstGlyph(tail.lastChild), head = el.firstChild.nodeType === 3 ? el.firstChild : el.firstChild.firstChild;
+        const r = document.createRange(); r.selectNodeContents(head); const headRects = r.getClientRects(), headEnd = headRects[headRects.length - 1];
+        // The same line as plain text, unwrapped, measures where the tail's first word would sit.
+        const plain = el.cloneNode(false); plain.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:auto';
+        const ph = document.createElement(el.firstChild.nodeType === 3 ? 'span' : el.firstChild.tagName); ph.textContent = head.data;
+        const pt = document.createElement(tail.tagName); pt.textContent = tail.textContent; pt.className = 'plain-tail';
+        plain.append(ph, ' ', pt); el.parentElement.append(plain);
+        const pr = document.createRange(); pr.setStart(pt.firstChild, 2); pr.setEnd(pt.firstChild, 3);
+        const ph1 = document.createRange(); ph1.selectNodeContents(ph.firstChild);
+        const plainOffset = pr.getClientRects()[0].left - [...ph1.getClientRects()].pop().right; plain.remove();
+        return { id: el.id || el.className + ':' + head.data.slice(0, 12), wrapped: word.top > headEnd.top + 1 && Math.abs(word.left - box.left) <= 1,
+          dotHit: tail.querySelector('.sep').contains(document.elementFromPoint((sep.left + sep.right) / 2 - 2, (sep.top + sep.bottom) / 2)),
+          // Every line of the tail's words starts inside the clip, including lines it wraps onto inside itself.
+          textLeft: (() => { const t = document.createRange(); t.setStart(tail.lastChild, 0); t.setEnd(tail.lastChild, tail.lastChild.length); return Math.min(...[...t.getClientRects()].map(x => x.left)) - box.left; })(),
+          sepRight: sep.right - box.left, sepLeft: sep.left - box.left, offset: word.left - headEnd.right, plainOffset };
+      }));
+      assert.equal(rows.length, 5);
+      for (const row of rows) {
+        seen.add(row.wrapped);
+        assert.ok(row.textLeft >= -0.5, `${width}: no word of the tail is clipped: ${JSON.stringify(row)}`);
+        if (row.wrapped) assert.ok(row.sepRight <= 0.5 && !row.dotHit, `${width}: the dot sits left of the clip edge, clipped: ${JSON.stringify(row)}`);
+        else {
+          assert.ok(row.sepLeft >= 0 && row.dotHit, `${width}: the dot is inside the line and shows: ${JSON.stringify(row)}`);
+          assert.ok(Math.abs(row.offset - row.plainOffset) <= 1.5, `${width}: head-to-tail spacing matches plain text: ${JSON.stringify(row)}`);
+        }
+      }
+    } finally { await context.close(); }
+  }
+  assert.deepEqual([...seen].sort(), [false, true], 'both forms occur across 320, 390 and 1440');
 });
 
 test('W2: layer 3 is checked only when its response is pasted, and the two orders are connected', async () => {

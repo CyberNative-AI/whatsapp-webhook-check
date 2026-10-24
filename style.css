@@ -119,12 +119,22 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .sample-verdict { font-weight: 600; line-height: 1.35; }
 .sample-fix { font-size: 0.9375rem; line-height: 1.5; }
 .sample-key { margin-right: .5em; }
-/* The example's inputs, under its verdict and fix: one line per read, layer number first, then the read and the field
-   the check looked at. Read and field share a row when there is room. */
+/* The example's inputs, under its verdict and fix: one row per layer, its "Layer N" tag first, then each read and the
+   field the check looked at (layer 4 has two reads, stacked). Read and field share a line when there is room. */
 .sample-inputs { display: grid; gap: var(--wp-2); padding-top: var(--wp-3); border-top: 1px solid var(--wp-hair); }
-.sample-inputs .sample-key span { color: var(--wp-muted); }
+.sample-inputs .sample-key .tail { color: var(--wp-muted); }
+/* Two-part lines wrap only at their separator, and show the "·" only when both parts share a line: the "· " is drawn just
+   left of the tail, over the end of a --gap box, so when the tail starts a line the "·" lands left of it and is clipped. */
+.sep-wrap { overflow: hidden; }
+.sep-wrap .gap { display: inline-block; width: var(--gap, 0.75em); }
+.sep-wrap .tail { display: inline-block; }
+.sep-wrap .sep { display: inline-block; width: var(--sep, 0.5em); margin-inline-start: calc(-1 * var(--sep, 0.5em)); }
+/* Mono key lines: a character is 0.66em (0.6em advance + 0.06em letter-spacing), so " · " is 1.98em and "· " 1.32em. */
+.label.sep-wrap, .sample-key.sep-wrap { --gap: 1.98em; --sep: 1.32em; }
 .sample-reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--wp-text-cite); line-height: 1.45; }
-.sample-reads li { display: grid; grid-template-columns: 1.25rem 12.5rem minmax(0, 1fr) auto; column-gap: var(--wp-2); align-items: baseline; }
+.sample-reads li { display: grid; grid-template-columns: max-content minmax(0, 1fr) auto; column-gap: var(--wp-3); align-items: baseline; }
+.sr-pairs { display: grid; gap: 2px; }
+.sr-pair { display: grid; grid-template-columns: 12.5rem minmax(0, 1fr); column-gap: var(--wp-2); align-items: baseline; }
 .sr-num { font: 500 var(--wp-text-cite)/1.45 var(--wp-font-mono); color: var(--wp-muted); }
 .sr-read { color: var(--wp-muted); }
 .sr-value { color: var(--wp-ink); overflow-wrap: anywhere; }
@@ -146,6 +156,7 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .layer-map b { display: block; font-weight: 600; }
 /* A grey note moves to the next line whole, and wraps inside itself only when it is wider than the line. */
 .layer-map i { display: inline-block; font-style: normal; font-weight: 400; color: var(--wp-muted); font-size: var(--wp-text-meta); }
+.layer-map .gap { font-size: var(--wp-text-meta); }
 .layer-map code { display: block; color: var(--wp-muted); font-size: var(--wp-text-cite); }
 .layers-figure .why { margin-top: calc(-1 * var(--wp-2)); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.5; }
 .layers-figure figcaption { display: grid; gap: var(--wp-3); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.5; border-left: 2px solid var(--ww-ice-deep); padding-left: var(--wp-4); }
@@ -338,11 +349,8 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
   .hero { padding-top: var(--wp-6); }
   .hero-copy { gap: var(--wp-4); }
   .maker { margin-top: calc(-4px - 15px); }
-  .sample-reads li { grid-template-columns: 1.25rem minmax(0, 1fr) auto; }
-  .sr-num { grid-row: span 2; }
-  .sr-read { grid-column: 2; }
-  .sr-value { grid-column: 2; }
-  .sr-mark { grid-column: 3; grid-row: 1; }
+  .sr-pairs { gap: 6px; }
+  .sr-pair { grid-template-columns: minmax(0, 1fr); }
   .site-header .wrap { min-height: 64px; gap: var(--wp-4); }
   .wordmark { font-size: 1.3125rem; }
   .brand-link img { width: 30px; height: 30px; }
@@ -360,6 +368,11 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 /* The hero label names the product, so on a phone the header keeps room for "Source on GitHub". */
 @media (max-width: 480px) {
   .brand .product { display: none; }
+}
+/* Below 375 a side tag squeezes the reads into mid-word breaks: the tag goes on its own line, "Broken" beside it. */
+@media (max-width: 374px) {
+  .sample-reads li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .sr-pairs { grid-column: 1 / -1; grid-row: 2; }
 }
 /* At 320 the wordmark and "Source on GitHub" touch: show "GitHub", keep "Source on GitHub" as the link's name. */
 @media (max-width: 359px) {

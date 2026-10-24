@@ -45,13 +45,12 @@
             <p class="sample-verdict">Broken at layer 3: App webhook subscription</p>
             <p class="sample-fix"><span class="sample-key">One fix</span> In the n8n editor stop test listening, then publish the workflow so n8n registers the Production URL.</p>
             <div class="sample-inputs">
-              <p class="sample-key">What it was given <span>· this example includes the fourth response</span></p>
+              <p class="sample-key sep-wrap">What it was given, by layer<span class="gap"> </span><span class="tail"><span class="sep">· </span>includes the optional fourth read (layer 3)</span></p>
               <ol class="sample-reads">
-                <li data-sample-layer="1"><span class="sr-num">1</span><span class="sr-read">n8n Production URL</span><code class="sr-value">https://n8n.example.com/<wbr>webhook/<wbr>abc</code></li>
-                <li data-sample-layer="2"><span class="sr-num">2</span><code class="sr-read">GET /1001/subscribed_apps</code><code class="sr-value">"id": "2002"</code></li>
-                <li data-sample-layer="3" class="is-broken"><span class="sr-num">3</span><code class="sr-read">GET /2002/subscriptions</code><code class="sr-value">"callback_url": "https://n8n.example.com/<wbr>webhook-test/<wbr>abc"</code><span class="sr-mark">Broken</span></li>
-                <li data-sample-layer="4"><span class="sr-num">4</span><code class="sr-read">GET /3003?fields=…</code><code class="sr-value">"platform_type": "CLOUD_API"</code></li>
-                <li data-sample-layer="4"><span class="sr-num">4</span><code class="sr-read">GET /1001/phone_numbers</code><code class="sr-value">"id": "3003"</code></li>
+                <li data-sample-layer="1"><span class="sr-num">Layer 1</span><span class="sr-pairs"><span class="sr-pair"><span class="sr-read">n8n Production URL</span><code class="sr-value">https://n8n.example.com/<wbr>webhook/<wbr>abc</code></span></span></li>
+                <li data-sample-layer="2"><span class="sr-num">Layer 2</span><span class="sr-pairs"><span class="sr-pair"><code class="sr-read">GET /1001/subscribed_apps</code><code class="sr-value">"id": "2002"</code></span></span></li>
+                <li data-sample-layer="3" class="is-broken"><span class="sr-num">Layer 3</span><span class="sr-pairs"><span class="sr-pair"><code class="sr-read">GET /2002/subscriptions</code><code class="sr-value">"callback_url": "https://n8n.example.com/<wbr>webhook-test/<wbr>abc"</code></span></span><span class="sr-mark">Broken</span></li>
+                <li data-sample-layer="4"><span class="sr-num">Layer 4</span><span class="sr-pairs"><span class="sr-pair"><code class="sr-read">GET /1001/phone_numbers</code><code class="sr-value">"id": "3003"</code></span><span class="sr-pair"><code class="sr-read">GET /3003?fields=…</code><code class="sr-value">"platform_type": "CLOUD_API"</code></span></span></li>
               </ol>
             </div>
           </div>
@@ -67,14 +66,14 @@
           <div class="specimen" aria-hidden="true">
             <ol class="assembly"><li class="seg seg-1"><span class="seg-body"><span class="lamp">1</span></span></li><li class="seg seg-2"><span class="seg-body"><span class="lamp">2</span></span></li><li class="seg seg-3"><span class="seg-body"><span class="lamp">3</span></span></li><li class="seg seg-4"><span class="seg-body"><span class="lamp">4</span></span></li><li class="seg seg-5"><span class="seg-body"><span class="lamp">5</span></span></li></ol>
           </div>
-          <p class="label" id="layers-caption"><b>Five layers</b> · checked in this order</p>
+          <p class="label sep-wrap" id="layers-caption"><b>Five layers</b><span class="gap"> </span><span class="tail"><span class="sep">· </span>the page checks 1–4; you run 5</span></p>
           <p class="why">The check reads them in this order and stops at the first broken one, so you get one fix.</p>
           <ol class="layer-map">
             <li><span class="num">1</span><span><b>Callback URL</b><code>public HTTPS, /webhook/</code></span></li>
-            <li><span class="num">2</span><span><b>WhatsApp Business Account (WABA) → app link <i>· WABA override</i></b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
-            <li><span class="num">3</span><span><b>App webhook <i>· optional: checked when you paste its response</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
-            <li><span class="num">4</span><span><b>Phone number <i>· phone override</i></b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
-            <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
+            <li><span class="num">2</span><span><b class="sep-wrap">WhatsApp Business Account (WABA) → app link<span class="gap"> </span><i class="tail"><span class="sep">· </span>WABA override</i></b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
+            <li><span class="num">3</span><span><b class="sep-wrap">App webhook<span class="gap"> </span><i class="tail"><span class="sep">· </span>optional: checked when you paste its response</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
+            <li><span class="num">4</span><span><b class="sep-wrap">Phone number<span class="gap"> </span><i class="tail"><span class="sep">· </span>phone override</i></b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
+            <li><span class="num">5</span><span><b>Challenge</b><code>a curl the result writes for you to run</code></span></li>
           </ol>
           <figcaption>
             <p class="label"><b>Delivery order</b> · how Meta routes a message</p>
