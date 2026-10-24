@@ -13,6 +13,7 @@ const fixBox = byId('fix');
 const feedback = byId('feedback');
 const repair = byId('repair');
 const formError = byId('form-error');
+const sample = byId('sample-result');
 const path = byId('path');
 const idlePath = path.firstElementChild.cloneNode(true);
 const idleSummary = summary.textContent;
@@ -193,6 +194,8 @@ function render(layers, recorded = false) {
   renderPath(layers, verdict);
   summary.closest('.result').dataset.state = verdict.blocking ? (verdict.blocking.status === 'fail' ? 'broken' : 'cannot') : 'clear';
   byId('recorded-tag').hidden = !recorded;
+  // The hero's static example result gives way to a real one.
+  sample.hidden = true;
   summary.classList.remove('empty');
   summary.replaceChildren(document.createTextNode(verdict.title));
   const detail = verdict.blocking ? verdict.blocking.message :
@@ -323,6 +326,7 @@ byId('example-clear').addEventListener('click', () => {
   for (const input of form.querySelectorAll('[aria-invalid]')) input.removeAttribute('aria-invalid');
   formError.hidden = true;
   clearResult(idleSummary);
+  sample.hidden = false;
   byId('token-fields').hidden = true;
   byId('paste-fields').hidden = false;
   exampleInForm = false;

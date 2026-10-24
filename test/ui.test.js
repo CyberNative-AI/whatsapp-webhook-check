@@ -99,7 +99,7 @@ for (const width of [320, 390, 1440]) {
       assert.match(await page.innerText('.hero-copy .label'), /webhook check/i);
       assert.equal(await overflow(page), 0);
       await page.click('#load-example');
-      await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+      await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
       assert.equal(await overflow(page), 0);
     } finally { await context.close(); }
   });
@@ -111,7 +111,7 @@ test('recorded example: one click reaches the layer 3 repair with no request and
     const requests = [];
     page.on('request', request => requests.push(request.url()));
     await page.click('#load-example');
-    await page.getByText('Broken at layer 3: App webhook subscription', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3: App webhook subscription', { exact: false }).waitFor();
     assert.deepEqual(requests, []);
     assert.deepEqual(external, []);
     const state = await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length, cookies: document.cookie }));
@@ -152,7 +152,7 @@ test('recorded example replaces typed entries only after an explicit choice', as
     assert.equal(await page.inputValue('#waba-id'), '777');
     await page.getByRole('button', { name: 'Load a recorded example' }).click();
     await page.click('#example-replace');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     assert.equal(await page.inputValue('#waba-id'), '1001');
     assert.equal(await page.inputValue('#user-token'), '', 'the example clears a typed token');
     assert.equal(await page.isChecked('input[name="mode"][value="paste"]'), true);
@@ -167,7 +167,7 @@ test('recorded example replaces typed entries only after an explicit choice', as
     // Clear the form empties everything the example filled.
     await page.click('#load-example');
     await page.click('#example-replace');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     await page.click('#example-clear');
     for (const id of ['waba-id', 'callback-url', 'waba-json', 'subscriptions-json']) assert.equal(await page.inputValue(`#${id}`), '');
     assert.equal(await page.evaluate(() => document.activeElement.id), 'waba-id');
@@ -178,7 +178,7 @@ test('keyboard: the path segments are links in layer order; Enter focuses that r
   const { context, page } = await open();
   try {
     await page.click('#load-example');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     await page.focus('[data-seg="1"] a');
     const names = [];
     for (let i = 0; i < 5; i++) {
@@ -205,7 +205,7 @@ test('a new check clears the old path: no stale segments while Graph reads are p
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(healthy.responses.wabaApps) });
     });
     await page.click('#load-example');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     assert.equal(await page.locator('.seg-link').count(), 5);
     // Token mode without a token stops early: the old result, its path and its tag are gone.
     await page.getByLabel('Use a token (GET only)').check();
@@ -237,7 +237,7 @@ test('clear the form after a result returns the result to neutral, and the examp
     const requests = [];
     page.on('request', request => requests.push(request.url()));
     await page.click('#load-example');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     await page.click('#example-clear');
     assert.equal(await page.textContent('#summary'), neutral);
     assert.match(await page.getAttribute('#summary', 'class'), /\bempty\b/);
@@ -250,12 +250,62 @@ test('clear the form after a result returns the result to neutral, and the examp
     assert.equal(await page.inputValue('#waba-id'), '');
     assert.equal(await page.evaluate(() => document.activeElement.id), 'waba-id');
     await page.click('#load-example');
-    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.locator('#summary').getByText('Broken at layer 3', { exact: false }).waitFor();
     assert.match(await segClass(page, 3), /is-fail is-first/);
     assert.equal(await page.isVisible('#recorded-tag'), true);
     assert.deepEqual(requests, []);
     assert.deepEqual(external, []);
     assert.deepEqual(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]), [0, 0, '']);
+  } finally { await context.close(); }
+});
+
+test('first screen: an example result, the maker and Source on GitHub; the weekly email is linked in the footer', async () => {
+  const { check, firstBlocking } = await import('../engine.js');
+  const real = firstBlocking(check(RECORDED_EXAMPLE));
+  for (const width of [390, 1440]) {
+    const { context, page } = await open(width, { viewport: { width, height: width < 600 ? 844 : 900 } });
+    try {
+      // The sample is the recorded example's real verdict and fix, word for word, and sits on the first screen.
+      assert.equal(await page.textContent('#sample-result .sample-verdict'), `Broken at layer ${real.id}: ${real.name}`);
+      assert.equal((await page.textContent('#sample-result .sample-fix')).replace(/^One fix\s*/, ''), real.fix);
+      assert.match(await page.textContent('#sample-label'), /^Example result/);
+      const box = await page.locator('#sample-result').boundingBox();
+      assert.ok(box.y + box.height <= page.viewportSize().height, `${width}: sample ends at ${box.y + box.height}`);
+      const maker = page.locator('.maker a');
+      assert.equal(await maker.textContent(), 'Made by CyberNative AI LLC, an AI-run company');
+      assert.equal(await maker.getAttribute('href'), 'https://cybernative.ai/about/');
+      const makerBox = await maker.boundingBox();
+      assert.ok(makerBox.y + makerBox.height <= page.viewportSize().height, 'maker line on the first screen');
+      assert.equal(await page.textContent('.site-header .source'), 'Source on GitHub');
+      assert.equal(await page.isVisible('.site-header .source'), true);
+      const email = page.locator('.site-footer a', { hasText: 'Get the weekly email: what breaks next' });
+      assert.equal(await email.getAttribute('href'), 'https://cybernative.ai/breakage-calendar/#wbn-email-calendar');
+      assert.equal(await page.locator('form, input').filter({ has: page.locator('xpath=ancestor::footer') }).count(), 0);
+      assert.equal(await page.locator('.site-footer form').count(), 0, 'a link, not a form');
+    } finally { await context.close(); }
+  }
+});
+
+test('the example result gives way to a real result, and returns when the form is cleared', async () => {
+  const { context, page } = await open(390);
+  try {
+    assert.equal(await page.isVisible('#sample-result'), true);
+    // A visitor's own check, not the example, also hides it.
+    await fillIds(page);
+    await page.fill('#waba-json', JSON.stringify(healthy.responses.wabaApps));
+    await page.fill('#phone-json', JSON.stringify(healthy.responses.phone));
+    await page.fill('#waba-phones-json', JSON.stringify(healthy.responses.wabaPhones));
+    await page.getByRole('button', { name: 'Find the broken layer' }).click();
+    await page.getByText(ALL_CLEAR, { exact: false }).waitFor();
+    assert.equal(await page.isVisible('#sample-result'), false);
+    await page.click('#example-clear').catch(() => {});
+    await page.click('#load-example');
+    await page.locator('#example-replace').click();
+    await page.locator('#summary').getByText('Broken at layer 3').waitFor();
+    assert.equal(await page.isVisible('#sample-result'), false);
+    assert.equal(await page.locator('text=Broken at layer 3').filter({ visible: true }).count(), 1, 'one visible layer-3 verdict');
+    await page.click('#example-clear');
+    assert.equal(await page.isVisible('#sample-result'), true);
   } finally { await context.close(); }
 });
 

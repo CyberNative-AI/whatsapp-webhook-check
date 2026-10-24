@@ -27,7 +27,7 @@
   <header class="site-header">
     <div class="wrap">
       <span class="brand"><a class="brand-link" href="https://cybernative.ai/" aria-label="CyberNative home"><img src="assets/cybernative-cn-mark.svg" alt="" width="32" height="32"><span class="wordmark">cybernative</span></a> <span class="product">Webhook check</span></span>
-      <a class="source" href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source</a>
+      <a class="source" href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source on GitHub</a>
     </div>
   </header>
 
@@ -37,11 +37,18 @@
         <div class="hero-copy">
           <p class="label"><b>Webhook check</b> · free · runs in your browser</p>
           <h1>Find the first broken layer between WhatsApp and&nbsp;n8n.</h1>
-          <p class="lede">For a WhatsApp Trigger that gets nothing while Meta shows the event, or that stops with “The WhatsApp App ID … already has a webhook subscription.” Paste what Meta’s Graph API Explorer returns and get one fix for the first broken layer.</p>
-          <p class="limit" id="tested-limit"><span class="label-limit">Limit</span> Tested on recorded response shapes, not a live WhatsApp account.</p>
+          <p class="maker"><a href="https://cybernative.ai/about/">Made by CyberNative AI LLC, an AI-run company</a></p>
+          <p class="lede">For a WhatsApp Trigger that gets nothing while Meta shows the event, or that stops with “The WhatsApp App ID … already has a webhook subscription.” Paste three Graph API responses and get one fix for the first broken layer.</p>
           <div class="actions"><a class="btn btn-primary" href="#check">Check my setup</a><button type="button" class="btn btn-quiet load-example" id="load-example" hidden>Try a recorded example</button></div>
+          <div class="sample" id="sample-result" role="group" aria-labelledby="sample-label">
+            <p class="sample-tag" id="sample-label">Example result <span>· synthetic data</span></p>
+            <p class="sample-verdict">Broken at layer 3: App webhook subscription</p>
+            <p class="sample-fix"><span class="sample-key">One fix</span> In the n8n editor stop test listening, then publish the workflow so n8n registers the Production URL.</p>
+          </div>
+          <p class="limit" id="tested-limit"><span class="label-limit">Limit</span> Tested on recorded response shapes, not a live WhatsApp account.</p>
+          <p class="reads">The three reads, run in Meta’s Graph API Explorer: <code>GET /{WABA_ID}/subscribed_apps</code>, <code>GET /{PHONE_NUMBER_ID}</code> and <code>GET /{WABA_ID}/phone_numbers</code>. WABA is your WhatsApp Business Account.</p>
           <ul class="terms">
-            <li>No token needed</li>
+            <li>Paste mode: your token never comes here</li>
             <li>Stores nothing</li>
             <li>No analytics, no backend</li>
           </ul>
@@ -51,6 +58,7 @@
             <ol class="assembly"><li class="seg seg-1"><span class="seg-body"><span class="lamp">1</span></span></li><li class="seg seg-2"><span class="seg-body"><span class="lamp">2</span></span></li><li class="seg seg-3"><span class="seg-body"><span class="lamp">3</span></span></li><li class="seg seg-4"><span class="seg-body"><span class="lamp">4</span></span></li><li class="seg seg-5"><span class="seg-body"><span class="lamp">5</span></span></li></ol>
           </div>
           <p class="label" id="layers-caption"><b>Five layers</b> · checked in this order</p>
+          <p class="why">The check reads them in this order and stops at the first broken one, so you get one fix.</p>
           <ol class="layer-map">
             <li><span class="num">1</span><span><b>Callback URL</b><code>public HTTPS, /webhook/</code></span></li>
             <li><span class="num">2</span><span><b>WABA → app link <i>· WABA override</i></b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
@@ -59,13 +67,14 @@
             <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
           </ol>
           <figcaption>
-            <p class="label"><b>Delivery order</b> · not the check order</p>
+            <p class="label"><b>Delivery order</b> · the order Meta delivers in</p>
+            <p class="why">Meta sends each message to the first URL in this list that is set.</p>
             <ol class="route">
               <li>A phone-number override URL, if one is set</li>
               <li>A WABA override URL, if one is set</li>
               <li>Your app’s webhook</li>
             </ol>
-            <p>Meta sends messages to a phone-number override URL first, then a WABA override, and only then to your app’s webhook, so the check reads both overrides. It stops at the first broken layer, never contacts your n8n and never writes to Meta.</p>
+            <p>So an override takes messages away from your app’s webhook, and the check reads both overrides. It never contacts your n8n and never writes to Meta.</p>
           </figcaption>
         </figure>
       </div>
@@ -216,7 +225,7 @@
     <div class="wrap">
       <p>Prepared by <a href="https://cybernative.ai/">CyberNative AI LLC</a>, an AI-run company, using AI agents.</p>
       <p class="muted">Not affiliated with Meta, WhatsApp or n8n.</p>
-      <p class="links"><a href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source</a> <a href="https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new" target="_blank" rel="noopener noreferrer">Report a wrong result</a></p>
+      <p class="links"><a href="https://cybernative.ai/breakage-calendar/#wbn-email-calendar">Get the weekly email: what breaks next</a> <a href="https://github.com/CyberNative-AI/whatsapp-webhook-check" rel="noopener noreferrer">Source on GitHub</a> <a href="https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new" target="_blank" rel="noopener noreferrer">Report a wrong result</a></p>
     </div>
   </footer>
   <script type="module" src="./page.js"></script>
