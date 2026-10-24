@@ -503,6 +503,7 @@ test('W2: layer 3 is checked only when its response is pasted, and the two order
   assert.equal(check({ ...RECORDED_EXAMPLE, responses: { ...three, wabaApps: override, phone: phone(false) } })[1].status, 'fail');
   const { context, page } = await open(1440);
   try {
+    assert.equal((await page.textContent('.layer-map li:nth-child(2) b')).replace(/\s+/g, ' '), 'WhatsApp Business Account (WABA) → app link · WABA override', 'WABA spelled out where it first shows at 1440');
     assert.equal((await page.textContent('.layer-map li:nth-child(3) b')).replace(/\s+/g, ' '), 'App webhook · optional: checked when you paste its response');
     assert.match(await page.textContent('.layers-figure figcaption'), /The two orders meet here: a WABA override \(layer 2\) counts only when the phone number \(layer 4\) has no override of its own, so the check uses the layer 4 read to judge layer 2\./);
     assert.equal(await page.textContent('#tested-limit'), 'Limit Tested on recorded response shapes, not a live WhatsApp account.');

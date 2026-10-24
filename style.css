@@ -103,7 +103,14 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .maker-more { display: flex; align-items: center; white-space: nowrap; }
 .maker-sep { margin-inline: 0.5em; }
 /* Below 480 px the line cannot hold both links: the second takes its own row, without the separator. */
-@media (max-width: 480px) { .maker-more { flex-basis: 100%; } .maker-sep { display: none; } }
+/* Each row is then exactly 48 px, and the space that saves goes under the byline, so "How we check" sits with the
+   maker line above it and the lede stays where it was. */
+@media (max-width: 480px) {
+  .maker-more { flex-basis: 100%; } .maker-sep { display: none; }
+  .maker a { padding-block: 13px; padding-block: calc((48px - 1lh) / 2); min-height: 48px; box-sizing: border-box; }
+  .maker { margin-bottom: calc(2lh - 51px); }
+  .maker a:focus-visible { outline-offset: calc(2px - (48px - 1lh) / 2); }
+}
 /* A static sample of the recorded example's real output. Dashed and tagged so it never reads as the visitor's own
    result; page.js hides it once a real result renders. */
 .sample { max-width: 36em; display: grid; gap: var(--wp-2); padding: var(--wp-3) var(--wp-4); border: 1px dashed var(--wp-muted); border-radius: var(--wp-radius); background: var(--wp-panel); }
@@ -137,7 +144,8 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .layer-map li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--wp-3); padding: var(--wp-3) 0; border-bottom: 1px solid var(--wp-hair); }
 .layer-map .num { font-weight: 500; color: var(--wp-muted); padding-top: 2px; }
 .layer-map b { display: block; font-weight: 600; }
-.layer-map i { font-style: normal; font-weight: 400; color: var(--wp-muted); font-size: var(--wp-text-meta); }
+/* A grey note moves to the next line whole, and wraps inside itself only when it is wider than the line. */
+.layer-map i { display: inline-block; font-style: normal; font-weight: 400; color: var(--wp-muted); font-size: var(--wp-text-meta); }
 .layer-map code { display: block; color: var(--wp-muted); font-size: var(--wp-text-cite); }
 .layers-figure .why { margin-top: calc(-1 * var(--wp-2)); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.5; }
 .layers-figure figcaption { display: grid; gap: var(--wp-3); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.5; border-left: 2px solid var(--ww-ice-deep); padding-left: var(--wp-4); }
