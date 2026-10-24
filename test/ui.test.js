@@ -230,6 +230,35 @@ test('a new check clears the old path: no stale segments while Graph reads are p
   } finally { await context.close(); }
 });
 
+test('clear the form after a result returns the result to neutral, and the example still runs after it', async () => {
+  const { context, page, external } = await open(390);
+  try {
+    const neutral = await page.evaluate(() => document.querySelector('#summary').textContent);
+    const requests = [];
+    page.on('request', request => requests.push(request.url()));
+    await page.click('#load-example');
+    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    await page.click('#example-clear');
+    assert.equal(await page.textContent('#summary'), neutral);
+    assert.match(await page.getAttribute('#summary', 'class'), /\bempty\b/);
+    assert.equal(await page.getAttribute('.result', 'data-state'), null);
+    assert.equal(await page.locator('#fix > *').count(), 0, 'no One fix');
+    assert.equal(await page.locator('#results > *').count(), 0, 'no layer rows');
+    assert.equal(await page.locator('.seg-link').count(), 0);
+    assert.equal(await page.locator('.path .is-idle').count(), 5);
+    for (const id of ['recorded-tag', 'recorded-note', 'feedback', 'repair', 'form-error']) assert.equal(await page.isVisible(`#${id}`), false, `#${id} hidden`);
+    assert.equal(await page.inputValue('#waba-id'), '');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'waba-id');
+    await page.click('#load-example');
+    await page.getByText('Broken at layer 3', { exact: false }).waitFor();
+    assert.match(await segClass(page, 3), /is-fail is-first/);
+    assert.equal(await page.isVisible('#recorded-tag'), true);
+    assert.deepEqual(requests, []);
+    assert.deepEqual(external, []);
+    assert.deepEqual(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]), [0, 0, '']);
+  } finally { await context.close(); }
+});
+
 test('unknown stays unknown: an omitted optional layer 3 is Not checked, a failed read is Cannot check, never Pass', async () => {
   const { context, page } = await open();
   try {

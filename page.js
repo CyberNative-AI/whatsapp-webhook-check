@@ -15,6 +15,7 @@ const repair = byId('repair');
 const formError = byId('form-error');
 const path = byId('path');
 const idlePath = path.firstElementChild.cloneNode(true);
+const idleSummary = summary.textContent;
 const SHORT_NAMES = ['Callback URL', 'WABA link', 'App webhook', 'Phone number', 'Challenge'];
 
 function el(tag, className, text) {
@@ -243,6 +244,19 @@ function render(layers, recorded = false) {
   if (recorded) { feedback.hidden = true; repair.hidden = true; }
 }
 
+// Back to the neutral result: unmarked path, no verdict, fix, rows, tag, feedback or repair offer.
+function clearResult(message) {
+  summary.classList.add('empty');
+  summary.textContent = message;
+  results.replaceChildren();
+  fixBox.replaceChildren();
+  path.replaceChildren(idlePath.cloneNode(true));
+  delete summary.closest('.result').dataset.state;
+  byId('recorded-tag').hidden = true;
+  feedback.hidden = true;
+  repair.hidden = true;
+}
+
 function showError(message, field) {
   formError.textContent = message;
   formError.hidden = false;
@@ -306,6 +320,9 @@ byId('example-replace').addEventListener('click', loadExample);
 byId('example-keep').addEventListener('click', () => { exampleConfirm.hidden = true; byId('waba-id').focus(); });
 byId('example-clear').addEventListener('click', () => {
   form.reset();
+  for (const input of form.querySelectorAll('[aria-invalid]')) input.removeAttribute('aria-invalid');
+  formError.hidden = true;
+  clearResult(idleSummary);
   byId('token-fields').hidden = true;
   byId('paste-fields').hidden = false;
   exampleInForm = false;
@@ -332,16 +349,8 @@ form.addEventListener('submit', async event => {
   let userToken = tokenMode ? byId('user-token').value.trim() : '';
   if (tokenMode) byId('user-token').value = '';
   if (!validate(input)) return;
-  summary.classList.add('empty');
-  summary.textContent = 'Checking…';
-  results.replaceChildren();
-  fixBox.replaceChildren();
   // A new check starts from an unmarked path: no old statuses or links while it runs or if it stops early.
-  path.replaceChildren(idlePath.cloneNode(true));
-  delete summary.closest('.result').dataset.state;
-  byId('recorded-tag').hidden = true;
-  feedback.hidden = true;
-  repair.hidden = true;
+  clearResult('Checking…');
   try {
     if (!tokenMode) {
       Object.assign(input.responses, {
