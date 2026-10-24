@@ -1,0 +1,21 @@
+/* Share card layout on the graphite field. Text colours on #151518: paper 14.96, muted 8.81, ice 13.9, flag 7.4. */
+html, body { margin: 0; background: var(--oa-ground); }
+.card { width: 1200px; height: 630px; box-sizing: border-box; padding: 56px 72px 52px; display: grid; grid-template-rows: auto 1fr auto auto; color: var(--oa-paper); background: radial-gradient(120% 90% at 85% 100%, #24262c 0%, var(--oa-ground) 60%); }
+.card-top { display: flex; align-items: center; gap: 20px; }
+.card-brand { display: inline-flex; align-items: center; gap: 10px; }
+.card-brand .wordmark { font-size: 2rem; }
+.card-product { color: var(--oa-muted); font: 500 1.375rem/1 var(--wp-font-body); padding-left: 20px; border-left: 1px solid var(--oa-line); }
+.card h1 { font-size: 66px; line-height: 1; letter-spacing: -0.045em; max-width: 16em; align-self: center; }
+.card .assembly { --seg-h: 78px; --collar: 16px; --ice-inlay: var(--ww-ice); padding-bottom: 0; }
+.card .seg { display: grid; justify-items: center; gap: 6px; }
+.card .seg-2 .seg-body::after, .card .seg-4 .seg-body::after { width: 16px; left: calc(50% - 8px); height: 15px; }
+.card .lamp { width: 38px; height: 38px; }
+.card .is-pass .lamp::after { width: 9px; height: 17px; border-width: 0 3.5px 3.5px 0; }
+.card .is-fail .lamp { font-size: 1.75rem; }
+.card .is-skipped .lamp::after { font-size: 1.25rem; }
+.card .seg-name { margin-top: 20px; color: var(--oa-paper); font-size: 1.25rem; }
+.card .seg-state { font-size: 0.9375rem; color: var(--oa-muted); }
+.card .is-pass .seg-state { color: var(--ww-ice); }
+.card .is-fail .seg-state { color: #f2a27e; }
+.card .is-first .seg-body { outline: 4px solid #f2a27e; outline-offset: 5px; }
+.card-foot { margin-top: 30px; color: var(--oa-muted); font: 500 1.0625rem/1 var(--wp-font-mono); letter-spacing: 0.04em; text-transform: uppercase; }

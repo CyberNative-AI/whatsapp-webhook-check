@@ -14,8 +14,8 @@ const bodyForPath = (path, wabaApps, phone = fixture.responses.phone) => {
   throw new Error(`Unexpected Graph path: ${path}`);
 };
 
-const STATIC_FILES = ['index.html', 'page.js', 'engine.js', 'style.css', 'assets/cybernative-cn-mark.svg',
-  ...['Fraunces144ptSoft-SemiBold', 'IBMPlexSans-Regular', 'IBMPlexSans-SemiBold', 'IBMPlexMono-Regular-Latin1', 'IBMPlexMono-Medium-Latin1'].map(name => `assets/fonts/${name}.woff2`)];
+const STATIC_FILES = ['index.html', 'page.js', 'engine.js', 'example.js', 'style.css', 'nojs.css', 'assets/cybernative-cn-mark.svg',
+  ...['Syne-Display-Latin1-500-700', 'DMSans-Text-Latin1-400-600', 'DMMono-Regular-Latin1', 'DMMono-Medium-Latin1'].map(name => `assets/fonts/${name}.woff2`)];
 const TYPES = { html: 'text/html', js: 'text/javascript', css: 'text/css', svg: 'image/svg+xml', woff2: 'font/woff2' };
 const ALL_CLEAR = 'No broken layer found in what could be checked';
 

@@ -1,4 +1,5 @@
 import { check, cannotCheckLayer, firstBlocking, waitsForPhoneRead, GRAPH_ORIGIN, GRAPH_VERSION } from './engine.js';
+import { RECORDED_EXAMPLE } from './example.js';
 
 const ISSUES_URL = 'https://github.com/CyberNative-AI/whatsapp-webhook-check/issues/new';
 const PAGE_VERSION = '1.0.0';
@@ -12,6 +13,9 @@ const fixBox = byId('fix');
 const feedback = byId('feedback');
 const repair = byId('repair');
 const formError = byId('form-error');
+const path = byId('path');
+const idlePath = path.firstElementChild.cloneNode(true);
+const SHORT_NAMES = ['Callback URL', 'WABA link', 'App webhook', 'Phone number', 'Challenge'];
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -93,7 +97,8 @@ function statusOf(item) {
   if (item.status === 'warn') return ['warn', 'Warning'];
   if (item.status === 'fail') return ['fail', 'Broken'];
   if (cannotCheckLayer(item)) return ['cannot', 'Cannot check'];
-  if (item.id === 5) return ['skipped', 'You run it'];
+  // Layer 5 is yours to run only once the page has a command for it; behind a broken layer it is not checked.
+  if (item.id === 5) return item.evidence?.command ? ['skipped', 'You run it'] : ['skipped', 'Not checked'];
   return ['skipped', 'Not checked'];
 }
 
@@ -146,10 +151,47 @@ function feedbackUrl(found, layers, verdict) {
   return url.href;
 }
 
-function render(layers) {
+// The signal path: one machined segment per layer, marked with the engine's status. Each segment links to its row.
+function openLayer(id) {
+  const row = byId(`layer-${id}`);
+  if (!row) return;
+  const details = row.querySelector('details');
+  if (details) details.open = true;
+  row.focus();
+}
+
+function renderPath(layers, verdict) {
+  const list = el('ol', 'assembly');
+  list.setAttribute('aria-label', 'Layer results');
+  for (const item of layers) {
+    const [kind, word] = statusOf(item);
+    const lamp = word === 'You run it' ? 'manual' : kind;
+    const segment = el('li', `seg seg-${item.id} is-${lamp}${item === verdict.blocking ? ' is-first' : ''}`);
+    segment.dataset.seg = item.id;
+    const link = el('a', 'seg-link');
+    link.href = `#layer-${item.id}`;
+    const body = el('span', 'seg-body');
+    body.append(el('span', 'lamp'));
+    const num = el('span', 'seg-num');
+    num.append(el('span', 'sr', 'Layer '), document.createTextNode(String(item.id)));
+    const name = el('span', 'seg-name', SHORT_NAMES[item.id - 1]);
+    const state = el('span', 'seg-state', word);
+    state.prepend(el('span', 'sr', ': '));
+    link.append(body, num, name, state);
+    link.addEventListener('click', event => { event.preventDefault(); openLayer(item.id); });
+    segment.append(link);
+    list.append(segment);
+  }
+  path.replaceChildren(list);
+}
+
+function render(layers, recorded = false) {
   results.replaceChildren();
   fixBox.replaceChildren();
   const verdict = verdictFor(layers);
+  renderPath(layers, verdict);
+  summary.closest('.result').dataset.state = verdict.blocking ? (verdict.blocking.status === 'fail' ? 'broken' : 'cannot') : 'clear';
+  byId('recorded-tag').hidden = !recorded;
   summary.classList.remove('empty');
   summary.replaceChildren(document.createTextNode(verdict.title));
   const detail = verdict.blocking ? verdict.blocking.message :
@@ -163,13 +205,21 @@ function render(layers) {
     const box = el('div', 'one-fix');
     box.append(el('p', 'label', 'One fix'), el('p', '', text));
     if (command) box.append(commandBlock(command));
+    // The tempting wrong repair for layers 2 and 3 sits next to the right one.
+    if (verdict.blocking.status === 'fail' && (verdict.blocking.id === 2 || verdict.blocking.id === 3)) {
+      const warning = el('p', 'fix-warning');
+      warning.append(el('span', 'label-limit', 'Do not'), 'DELETE ', el('code', '', '/{WABA_ID}/subscribed_apps'), ' to clear this. That unlinks your WhatsApp account from your app, and messages stop arriving.');
+      box.append(warning);
+    }
     fixBox.append(box);
   }
 
   for (const item of layers) {
     const [kind, word] = statusOf(item);
-    const row = el('li', `row${kind === 'skipped' && item.id !== 5 ? ' dim' : ''}`);
+    const row = el('li', `row${kind === 'skipped' && item.id !== 5 ? ' dim' : ''}${item === verdict.blocking ? ' first' : ''}`);
     row.dataset.layer = item.id;
+    row.id = `layer-${item.id}`;
+    row.tabIndex = -1;
     const head = el('div', 'row-head');
     head.append(el('span', 'row-name', item.name), el('span', `status ${kind}`, word));
     row.append(el('span', 'num', String(item.id)), head, el('p', 'row-msg', item.message));
@@ -177,6 +227,7 @@ function render(layers) {
       row.append(commandBlock(item.evidence.command), el('p', 'hint block', `Expect ${item.evidence.expected}. ${item.fix}`));
     } else if (item.evidence !== null && item.evidence !== undefined && kind !== 'skipped') {
       const details = el('details');
+      details.open = item === verdict.blocking;
       details.append(el('summary', '', 'Evidence'), el('pre', '', typeof item.evidence === 'string' ? item.evidence : JSON.stringify(item.evidence, null, 2)));
       if (item !== verdict.blocking && item.status !== 'pass') details.append(el('p', 'hint block', `Fix: ${item.fix}`));
       row.append(details);
@@ -188,6 +239,8 @@ function render(layers) {
   byId('feedback-no').href = feedbackUrl(false, layers, verdict);
   feedback.hidden = false;
   repair.hidden = false;
+  // A recorded example is not the visitor's setup: no feedback issue or repair offer for it.
+  if (recorded) { feedback.hidden = true; repair.hidden = true; }
 }
 
 function showError(message, field) {
@@ -211,8 +264,64 @@ function showResult() {
   if (box.getBoundingClientRect().top > window.innerHeight * 0.6 || box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: 'start' });
 }
 
+// Recorded example: fills the form with synthetic fixture data and runs the same paste-mode check.
+// It replaces what the visitor typed only after an explicit choice.
+let exampleInForm = false;
+const exampleConfirm = byId('example-confirm');
+const recordedNote = byId('recorded-note');
+const entryFields = () => [...form.querySelectorAll('input:not([type="radio"]), textarea')];
+
+function loadExample() {
+  exampleConfirm.hidden = true;
+  form.elements.mode.value = 'paste';
+  byId('token-fields').hidden = true;
+  byId('paste-fields').hidden = false;
+  for (const field of entryFields()) field.value = '';
+  const { wabaId, appId, phoneNumberId, callbackUrl, responses } = RECORDED_EXAMPLE;
+  const json = value => JSON.stringify(value, null, 2);
+  Object.entries({ 'waba-id': wabaId, 'app-id': appId, 'phone-id': phoneNumberId, 'callback-url': callbackUrl,
+    'waba-json': json(responses.wabaApps), 'phone-json': json(responses.phone), 'waba-phones-json': json(responses.wabaPhones),
+    'subscriptions-json': json(responses.appSubscriptions) }).forEach(([id, value]) => { byId(id).value = value; });
+  updateReads();
+  exampleInForm = true;
+  recordedNote.hidden = false;
+  form.requestSubmit();
+}
+
+function askForExample() {
+  if (!exampleInForm && entryFields().some(field => field.value.trim())) {
+    exampleConfirm.hidden = false;
+    byId('example-replace').focus();
+    return;
+  }
+  loadExample();
+}
+
+for (const button of document.querySelectorAll('.load-example')) {
+  button.hidden = false;
+  button.addEventListener('click', askForExample);
+}
+byId('example-bar').hidden = false;
+byId('example-replace').addEventListener('click', loadExample);
+byId('example-keep').addEventListener('click', () => { exampleConfirm.hidden = true; byId('waba-id').focus(); });
+byId('example-clear').addEventListener('click', () => {
+  form.reset();
+  byId('token-fields').hidden = true;
+  byId('paste-fields').hidden = false;
+  exampleInForm = false;
+  recordedNote.hidden = true;
+  updateReads();
+  byId('waba-id').focus();
+});
+form.addEventListener('input', () => {
+  if (!exampleInForm) return;
+  exampleInForm = false;
+  recordedNote.hidden = true;
+});
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
+  const recorded = exampleInForm;
   const input = {
     wabaId: byId('waba-id').value.trim(), appId: byId('app-id').value.trim(), phoneNumberId: byId('phone-id').value.trim(),
     callbackUrl: byId('callback-url').value.trim(), verifyToken: byId('verify-token').value.trim(),
@@ -227,6 +336,10 @@ form.addEventListener('submit', async event => {
   summary.textContent = 'Checking…';
   results.replaceChildren();
   fixBox.replaceChildren();
+  // A new check starts from an unmarked path: no old statuses or links while it runs or if it stops early.
+  path.replaceChildren(idlePath.cloneNode(true));
+  delete summary.closest('.result').dataset.state;
+  byId('recorded-tag').hidden = true;
   feedback.hidden = true;
   repair.hidden = true;
   try {
@@ -247,8 +360,9 @@ form.addEventListener('submit', async event => {
       if (!input.responses.phone?.error) input.responses.wabaPhones = await graphGet(`${input.wabaId}/phone_numbers`, userToken);
       userToken = '';
     }
-    render(check(input));
+    render(check(input), recorded);
     showResult();
+    if (recorded) summary.focus({ preventScroll: true });
   } catch (error) {
     userToken = '';
     summary.textContent = `Cannot check: ${error.message}`;

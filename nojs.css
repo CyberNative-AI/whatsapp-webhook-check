@@ -1,0 +1,3 @@
+/* Loaded only when JavaScript is off: the check cannot run, so the form and result give way to the explanation. */
+#check-form, .result, .tool .sub { display: none; }
+.tool-grid { display: block; }

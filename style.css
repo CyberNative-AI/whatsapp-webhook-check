@@ -1,96 +1,184 @@
-/* CyberNative brand kit v2.0.0 "Working Paper", Paper edition. Tokens copied from the kit's tokens.css. */
-@font-face { font-family: "Fraunces"; src: url("assets/fonts/Fraunces144ptSoft-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: optional; }
-@font-face { font-family: "IBM Plex Sans"; src: url("assets/fonts/IBMPlexSans-Regular.woff2") format("woff2"); font-weight: 400; font-display: optional; }
-@font-face { font-family: "IBM Plex Sans"; src: url("assets/fonts/IBMPlexSans-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: optional; }
-@font-face { font-family: "IBM Plex Mono"; src: url("assets/fonts/IBMPlexMono-Regular-Latin1.woff2") format("woff2"); font-weight: 400; font-display: optional; }
-@font-face { font-family: "IBM Plex Mono"; src: url("assets/fonts/IBMPlexMono-Medium-Latin1.woff2") format("woff2"); font-weight: 500; font-display: optional; }
+/* CyberNative Object Atlas, light diagnostic bench. Tokens and faces follow the company kit (Object Atlas
+   stable contract v1): graphite field for header and footer, a light sheet for the form, Syne display, DM Sans
+   text, DM Mono values. The product adds one object, a machined five-segment signal path, and an icy-green
+   accent. Status is always carried by a word and a shape as well as colour. */
+@font-face { font-family: "CN Display"; src: url("assets/fonts/Syne-Display-Latin1-500-700.woff2") format("woff2"); font-weight: 500 700; font-style: normal; font-display: fallback; }
+@font-face { font-family: "CN Text"; src: url("assets/fonts/DMSans-Text-Latin1-400-600.woff2") format("woff2"); font-weight: 400 600; font-style: normal; font-display: fallback; }
+@font-face { font-family: "DM Mono"; src: url("assets/fonts/DMMono-Regular-Latin1.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: fallback; }
+@font-face { font-family: "DM Mono"; src: url("assets/fonts/DMMono-Medium-Latin1.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: fallback; }
+/* Metric-matched stand-ins from the kit, so a late font swap keeps the same line breaks. */
+@font-face { font-family: "CN Display Fallback"; src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"), local("Arimo"), local("Helvetica"), local("Roboto"); font-weight: 400 500; size-adjust: 106%; ascent-override: 87.7%; descent-override: 26.4%; line-gap-override: 0%; }
+@font-face { font-family: "CN Display Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Roboto Bold"), local("Roboto-Bold"); font-weight: 600 900; size-adjust: 106.3%; ascent-override: 87.5%; descent-override: 26.3%; line-gap-override: 0%; }
+@font-face { font-family: "CN Text Fallback"; src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"), local("Arimo"), local("Helvetica"), local("Roboto"); font-weight: 400 500; size-adjust: 103.3%; ascent-override: 95.8%; descent-override: 30%; line-gap-override: 0%; }
+@font-face { font-family: "CN Text Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Roboto Bold"), local("Roboto-Bold"); font-weight: 600 900; size-adjust: 100.1%; ascent-override: 98.9%; descent-override: 31%; line-gap-override: 0%; }
 
 :root {
   color-scheme: light;
-  --wp-paper: #f6f2e7; --wp-panel: #fffdf7; --wp-ink: #0e1427; --wp-muted: #4a5a68; --wp-hair: #d6cfbd;
-  --wp-bio: #0db8ab; --wp-cited: #b8eae4; --wp-flag: #f6d2bf; --wp-rust: #9c3f17; --wp-link: #531b6c;
-  --wp-deep: #155967; --wp-focus: #a82b99;
-  --wp-font-display: "Fraunces", Georgia, serif;
-  --wp-font-body: "IBM Plex Sans", Arial, sans-serif;
-  --wp-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Object Atlas source values */
+  --oa-ground: #151518; --oa-ground-2: #1e1f23; --oa-paper: #e8e9e7; --oa-muted: #b2b4bd; --oa-blue: #b2c8f0;
+  --oa-line: #3c3d45; --oa-sheet: #eff0ec; --oa-blue-deep: #2d4f93;
+  /* The bench (contrast on the panel #f7f7f5): ink 17.1, muted 6.72, rust 6.5, amber 6.39, ice-deep 6.01 */
+  --wp-paper: var(--oa-sheet); --wp-panel: #f7f7f5; --wp-ink: #151518; --wp-muted: #55575f; --wp-hair: #cfd1d6;
+  --wp-rust: #9a3b16; --wp-amber: #7a5300; --wp-focus: var(--oa-blue-deep);
+  /* Product accent: icy green. Pale on graphite (13.9:1), deep on the sheet for marks and text (5.6:1). */
+  --ww-ice: #bfeadf; --ww-ice-deep: #1b6a5a; --ww-ice-tint: #dcefe9;
+  /* Machined silver */
+  --ww-metal: linear-gradient(180deg, #fbfbfa 0%, #e2e4e7 16%, #b3b7bf 42%, #eef0f1 60%, #989ca6 84%, #c9ccd2 100%);
+  --ww-collar: linear-gradient(180deg, #dadce0 0%, #8b8f99 34%, #c6c9cf 56%, #5d616a 86%, #878b94 100%);
+  --wp-font-display: "CN Display", "CN Display Fallback", Arial, sans-serif;
+  --wp-font-body: "CN Text", "CN Text Fallback", Arial, sans-serif;
+  --wp-font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --wp-text-hero: clamp(2.5rem, 5.2vw, 4.5rem);
-  --wp-text-title: clamp(2rem, 3.6vw, 3rem);
+  --wp-text-title: clamp(1.875rem, 3.4vw, 3rem);
   --wp-text-h3: 1.25rem;
   --wp-text-lede: clamp(1.125rem, 1.6vw, 1.3125rem);
   --wp-text-meta: 0.875rem;
   --wp-text-cite: 0.8125rem;
   --wp-2: 0.5rem; --wp-3: 0.75rem; --wp-4: 1rem; --wp-6: 1.5rem; --wp-8: 2rem; --wp-12: 3rem; --wp-16: 4rem; --wp-24: 6rem;
-  --wp-radius: 4px; --wp-page: 76rem; --wp-gutter: clamp(1.25rem, 4vw, 2.5rem); --wp-tap: 48px;
+  --wp-radius: 4px; --wp-pill: 999px; --wp-page: 80rem; --wp-gutter: clamp(1.25rem, 3.4vw, 3rem); --wp-tap: 48px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { background: var(--wp-paper); color: var(--wp-ink); font: 400 1rem/1.6 var(--wp-font-body); -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
 body { margin: 0; }
-a { color: var(--wp-link); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a { color: var(--wp-ink); text-decoration-color: var(--oa-blue-deep); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--oa-blue-deep); }
 :focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 3px; }
 .wrap { max-width: var(--wp-page); margin: 0 auto; padding: 0 var(--wp-gutter); }
-h1, h2 { font-family: var(--wp-font-display); font-weight: 600; letter-spacing: -0.02em; word-spacing: 0.06em; margin: 0; text-wrap: balance; }
-h1 { font-size: var(--wp-text-hero); line-height: 1.02; }
-h2 { font-size: var(--wp-text-title); line-height: 1.08; }
+h1, h2 { font-family: var(--wp-font-display); font-weight: 500; letter-spacing: -0.035em; margin: 0; text-wrap: balance; }
+h1 { font-size: var(--wp-text-hero); line-height: 0.98; letter-spacing: -0.05em; }
+h2 { font-size: var(--wp-text-title); line-height: 1.04; }
 p { margin: 0; }
 code, pre, .num { font-family: var(--wp-font-mono); font-feature-settings: "zero" 1; }
 code { font-size: 0.9375em; overflow-wrap: anywhere; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .skip { position: absolute; left: -999px; top: 0; }
-.skip:focus { left: var(--wp-4); top: var(--wp-4); z-index: 2; background: var(--wp-panel); padding: var(--wp-3) var(--wp-4); border: 2px solid var(--wp-ink); }
+.skip:focus { left: var(--wp-4); top: var(--wp-4); z-index: 2; background: var(--wp-panel); color: var(--wp-ink); padding: var(--wp-3) var(--wp-4); border: 2px solid var(--wp-ink); }
 
 .label { font: 500 var(--wp-text-cite)/1.2 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--wp-muted); }
 .label b { color: var(--wp-ink); font-weight: 500; }
 .label-limit { font: 500 var(--wp-text-cite)/1.2 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--wp-rust); margin-right: .5em; }
 .hint { color: var(--wp-muted); font-weight: 400; }
 .hint.block { display: block; }
+.tag { display: inline-flex; align-items: center; font: 500 0.75rem/1.2 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--wp-ink); background: var(--ww-ice-tint); border: 1px solid var(--ww-ice-deep); padding: 4px 8px; border-radius: var(--wp-pill); }
 
-/* header */
-.site-header { border-bottom: 2px solid var(--wp-ink); }
-.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--wp-6); min-height: 72px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.01em; min-height: var(--wp-tap); }
-.brand .product { color: var(--wp-muted); font-weight: 400; }
-.brand-link { display: inline-flex; align-items: center; gap: 10px; min-height: var(--wp-tap); color: var(--wp-ink); text-decoration: none; }
-.source { color: var(--wp-ink); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--wp-ink); min-height: var(--wp-tap); display: inline-flex; align-items: center; }
+/* header: the shared graphite field */
+.site-header { background: var(--oa-ground); color: var(--oa-paper); border-bottom: 1px solid var(--oa-line); }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--wp-6); min-height: 76px; }
+.site-header :focus-visible, .site-footer :focus-visible { outline-color: var(--oa-blue); }
+.brand { display: flex; align-items: center; gap: 14px; min-height: var(--wp-tap); min-width: 0; }
+.brand-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--wp-tap); color: var(--oa-paper); text-decoration: none; }
+.brand-link:hover { color: var(--oa-blue); }
+.wordmark { font: 600 1.5rem/1 var(--wp-font-display); letter-spacing: -0.054em; }
+.brand .product { color: var(--oa-muted); font-weight: 500; padding-left: 14px; border-left: 1px solid var(--oa-line); white-space: nowrap; }
+.source { color: var(--oa-paper); font-weight: 500; text-decoration: none; min-height: var(--wp-tap); display: inline-flex; align-items: center; border-bottom: 2px solid var(--oa-blue); }
+.source:hover { color: var(--oa-blue); }
 
-/* buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--wp-tap); padding: 0 var(--wp-6); border-radius: var(--wp-radius); font: 600 1rem/1 var(--wp-font-body); text-decoration: none; cursor: pointer; }
-.btn-primary { background: var(--wp-bio); color: var(--wp-ink); border: 2px solid var(--wp-ink); }
-.btn-primary:hover { background: #0aa598; }
-.btn-quiet { background: var(--wp-panel); color: var(--wp-ink); border: 2px solid var(--wp-ink); min-width: 6rem; }
-.btn-quiet:hover { background: var(--wp-paper); }
+/* buttons: graphite pill with paper type; hover is blue-deep */
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--wp-tap); padding: 0 var(--wp-6); border-radius: var(--wp-pill); font: 600 1rem/1 var(--wp-font-body); text-decoration: none; cursor: pointer; text-align: center; }
+.btn-primary { background: var(--wp-ink); color: var(--oa-paper); border: 2px solid var(--wp-ink); }
+.btn-primary:hover { background: var(--oa-blue-deep); border-color: var(--oa-blue-deep); color: #fff; }
+.btn-quiet { background: transparent; color: var(--wp-ink); border: 2px solid var(--wp-ink); min-width: 6rem; }
+.btn-quiet:hover { background: var(--wp-panel); color: var(--oa-blue-deep); border-color: var(--oa-blue-deep); }
+.text-button { all: unset; cursor: pointer; font-weight: 600; text-decoration: underline; text-decoration-color: var(--oa-blue-deep); text-underline-offset: 3px; display: inline-flex; align-items: center; min-height: var(--wp-tap); }
+.text-button:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
 
 /* hero */
 .hero { padding: var(--wp-16) 0 var(--wp-24); }
 .hero .wrap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--wp-16); align-items: start; }
 .hero-copy { display: grid; gap: var(--wp-6); }
-.hero-copy h1 { max-width: 14ch; }
+.hero-copy h1 { max-width: 12em; }
 .lede { font-size: var(--wp-text-lede); line-height: 1.5; max-width: 36em; }
 .limit { border-left: 2px solid var(--wp-rust); padding-left: var(--wp-4); max-width: 36em; }
-.terms { display: flex; flex-wrap: wrap; gap: var(--wp-2) var(--wp-6); margin: 0; padding: var(--wp-4) 0 0; border-top: 1px solid var(--wp-hair); list-style: none; color: var(--wp-muted); font-size: var(--wp-text-meta); font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--wp-3); }
+.terms { display: flex; flex-wrap: wrap; gap: var(--wp-2) var(--wp-6); margin: 0; padding: var(--wp-4) 0 0; border-top: 1px solid var(--wp-hair); list-style: none; color: var(--wp-muted); font-size: var(--wp-text-meta); font-weight: 500; }
 
-.layers-figure { margin: var(--wp-2) 0 0; background: var(--wp-panel); border: 2px solid var(--wp-ink); padding: var(--wp-6); }
-.layer-map { list-style: none; margin: var(--wp-4) 0 0; padding: 0; border-top: 1px solid var(--wp-ink); }
+.layers-figure { margin: var(--wp-2) 0 0; display: grid; gap: var(--wp-4); }
+/* The specimen: the assembly on a small graphite plate, set on the bench. Static art; nothing moves. */
+.specimen { background: var(--oa-ground); border-radius: 6px; padding: 30px 26px 34px; --seg-h: 58px; box-shadow: 0 18px 30px -24px rgba(21, 21, 24, 0.7); }
+.specimen .assembly { --ice-inlay: var(--ww-ice); }
+.specimen .lamp { font-size: 0.9375rem; }
+.layer-map { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--wp-ink); }
 .layer-map li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--wp-3); padding: var(--wp-3) 0; border-bottom: 1px solid var(--wp-hair); }
 .layer-map .num { font-weight: 500; color: var(--wp-muted); padding-top: 2px; }
 .layer-map b { display: block; font-weight: 600; }
 .layer-map i { font-style: normal; font-weight: 400; color: var(--wp-muted); font-size: var(--wp-text-meta); }
 .layer-map code { display: block; color: var(--wp-muted); font-size: var(--wp-text-cite); }
-.layers-figure figcaption { margin-top: var(--wp-4); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.45; }
+.layers-figure figcaption { display: grid; gap: var(--wp-3); color: var(--wp-muted); font-size: var(--wp-text-meta); line-height: 1.5; border-left: 2px solid var(--ww-ice-deep); padding-left: var(--wp-4); }
+.route { margin: 0; padding: 0 0 0 1.4em; color: var(--wp-ink); font-weight: 500; font-size: 0.9375rem; }
+.route li { padding: 2px 0; }
+.route li::marker { font: 500 var(--wp-text-cite) var(--wp-font-mono); color: var(--ww-ice-deep); }
+
+/* The assembly: five machined segments, joined by collars. Segments 2 and 4 carry a tap, where an override
+   can divert the signal; 1 is the inlet, 3 is grooved and optional, 5 ends in the probe you run yourself. */
+.assembly { --seg-h: 46px; --collar: 10px; --ice-inlay: var(--ww-ice-deep); list-style: none; margin: 0; padding: 0 0 14px; display: flex; align-items: flex-start; }
+.seg { flex: 1 1 0; min-width: 0; position: relative; }
+.seg + .seg { margin-left: var(--collar); }
+.seg-link { display: grid; justify-items: center; gap: 4px; text-decoration: none; color: var(--wp-ink); padding-bottom: 4px; min-height: var(--wp-tap); border-radius: 4px; }
+.seg-link:hover .seg-name { text-decoration: underline; text-decoration-color: var(--oa-blue-deep); }
+.seg-body { position: relative; display: grid; place-items: center; width: 100%; height: var(--seg-h); background: var(--ww-metal); border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(21, 21, 24, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.75), 0 9px 12px -10px rgba(0, 0, 0, 0.65); }
+.seg + .seg .seg-body::before { content: ""; position: absolute; left: calc(-1 * var(--collar)); top: -6px; bottom: -6px; width: var(--collar); border-radius: 2px;
+  background: linear-gradient(90deg, transparent calc(50% - 1px), var(--ice-inlay) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), var(--ww-collar);
+  box-shadow: inset 0 0 0 1px rgba(21, 21, 24, 0.4); }
+.seg-1 .seg-body { border-radius: calc(var(--seg-h) / 2) 4px 4px calc(var(--seg-h) / 2); }
+.seg-3 .seg-body { background: repeating-linear-gradient(90deg, transparent 0 13px, rgba(21, 21, 24, 0.2) 13px 15px, rgba(255, 255, 255, 0.55) 15px 16px), var(--ww-metal); }
+.seg-5 .seg-body { border-radius: 4px calc(var(--seg-h) / 2) calc(var(--seg-h) / 2) 4px; }
+.seg-5 .seg-body::after { content: ""; position: absolute; left: 100%; top: calc(50% - 2px); width: 9px; height: 4px; border-radius: 0 2px 2px 0; background: var(--ww-collar); }
+.seg-2 .seg-body::after, .seg-4 .seg-body::after { content: ""; position: absolute; top: 100%; left: calc(50% - 6px); width: 12px; height: 11px; border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, #8b8f99, #e2e4e7 45%, #6c7079); box-shadow: inset 0 -2px 0 var(--ice-inlay); }
+.seg-2 .lamp, .seg-4 .lamp { margin-top: -2px; }
+.lamp { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 500 0.8125rem/1 var(--wp-font-mono); color: var(--wp-ink);
+  background: radial-gradient(circle at 50% 35%, #fbfbfa, #d3d5d9); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.8); }
+.seg-num { font: 500 0.8125rem/1.2 var(--wp-font-mono); color: var(--wp-muted); margin-top: 12px; }
+.seg-name { font: 500 0.875rem/1.2 var(--wp-font-body); text-align: center; overflow-wrap: anywhere; }
+.seg-state { font: 500 0.75rem/1.2 var(--wp-font-mono); letter-spacing: 0.04em; text-transform: uppercase; text-align: center; color: var(--wp-muted); }
+
+/* Status on a segment: a lamp shape and a word. Unknown is never drawn as a pass. */
+.is-pass .lamp { background: var(--ww-ice-deep); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45); }
+.is-pass .lamp::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: translate(0, -1px) rotate(45deg); }
+.is-pass .seg-state { color: var(--ww-ice-deep); }
+.is-warn .lamp { background: var(--wp-amber); color: #fff; }
+.is-warn .lamp::after { content: "!"; font-weight: 500; }
+.is-warn .seg-state { color: var(--wp-amber); }
+.is-fail .lamp { background: var(--wp-rust); color: #fff; font-size: 1.125rem; }
+.is-fail .lamp::after { content: "×"; }
+.is-fail .seg-state { color: var(--wp-rust); }
+.is-cannot .lamp { background: #fff; box-shadow: none; border: 2px dashed var(--wp-rust); color: var(--wp-rust); }
+.is-cannot .lamp::after { content: "?"; }
+.is-cannot .seg-state { color: var(--wp-rust); }
+.is-skipped .lamp { color: var(--wp-muted); }
+.is-skipped .lamp::after { content: "–"; }
+.is-manual .lamp { background: #fff; box-shadow: none; border: 2px solid var(--wp-ink); }
+.is-manual .lamp::after { content: "→"; }
+.is-idle { display: grid; justify-items: center; }
+.is-idle .lamp::after { content: ""; }
+.is-first .seg-body { outline: 3px solid var(--wp-rust); outline-offset: 3px; }
+.is-first .seg-state { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 
 /* sections */
-.conflict, .tool, .limits { border-top: 2px solid var(--wp-ink); padding: var(--wp-16) 0; }
+.conflict, .tool, .limits { border-top: 1px solid var(--wp-ink); padding: var(--wp-16) 0; }
 .conflict .wrap, .limits .wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--wp-16); }
 .conflict h2, .limits h2 { margin-top: var(--wp-3); }
-.conflict h2 { font-size: clamp(1.625rem, 2.6vw, 2.25rem); line-height: 1.15; }
+.conflict h2 { font-size: clamp(1.625rem, 2.6vw, 2.25rem); line-height: 1.12; }
 .conflict-body { display: grid; gap: var(--wp-4); max-width: 40em; }
 .warning { display: grid; gap: var(--wp-3); border-left: 2px solid var(--wp-rust); padding: var(--wp-2) 0 var(--wp-2) var(--wp-4); margin-top: var(--wp-2); }
 .warning p:first-child { font-weight: 600; }
 
 /* the tool */
+.tool { background: linear-gradient(180deg, #e9eae5, var(--wp-paper) 220px); }
 .tool-head { display: grid; gap: var(--wp-3); margin-bottom: var(--wp-8); }
 .sub { color: var(--wp-muted); }
+.example { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp-3) var(--wp-4); margin-top: var(--wp-2); }
+.example .hint { flex: 1 1 18rem; font-size: var(--wp-text-meta); }
+.example-confirm { display: grid; gap: var(--wp-3); background: var(--wp-panel); border: 2px solid var(--wp-ink); border-radius: var(--wp-radius); padding: var(--wp-4); max-width: 40rem; }
+.example-confirm p { font-weight: 600; }
+.confirm-actions { display: flex; flex-wrap: wrap; gap: var(--wp-3); }
+.nojs { display: grid; gap: var(--wp-3); max-width: 44rem; background: var(--wp-panel); border: 2px solid var(--wp-ink); padding: var(--wp-6); margin-bottom: var(--wp-8); }
+.recorded-note { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--wp-2); background: var(--ww-ice-tint); border-left: 3px solid var(--ww-ice-deep); padding: var(--wp-2) var(--wp-4); }
+.recorded-note .tag { background: var(--wp-panel); margin-right: var(--wp-2); }
 .tool-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--wp-12); align-items: start; }
 form { display: grid; gap: var(--wp-8); min-width: 0; }
 .step { border: 0; border-top: 1px solid var(--wp-ink); margin: 0; padding: var(--wp-4) 0 0; min-width: 0; }
@@ -114,7 +202,7 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 /* The whole segment is the radio's hit area; the dot is drawn. */
 .mode input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .mode::before { content: ""; flex: none; width: 1.125rem; height: 1.125rem; border: 2px solid var(--wp-ink); border-radius: 50%; background: var(--wp-panel); }
-.mode:has(input:checked) { background: var(--wp-cited); }
+.mode:has(input:checked) { background: var(--ww-ice-tint); }
 .mode:has(input:checked)::before { background: radial-gradient(circle, var(--wp-ink) 0 40%, var(--wp-panel) 45%); }
 .mode:has(input:focus-visible) { outline: 3px solid var(--wp-focus); outline-offset: -5px; }
 .optional { margin-top: var(--wp-6); padding-top: var(--wp-2); border-top: 1px dashed var(--wp-hair); }
@@ -128,20 +216,32 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 .form-error { color: var(--wp-rust); font-weight: 600; }
 .submit { justify-self: start; }
 
-/* result */
-.result { background: var(--wp-panel); border: 2px solid var(--wp-ink); padding: var(--wp-6); display: grid; gap: var(--wp-4); min-width: 0; overflow-wrap: anywhere; }
-.verdict { font: 600 clamp(1.5rem, 2.4vw, 2rem)/1.15 var(--wp-font-display); letter-spacing: -0.02em; }
+/* result: the bench readout. The path strip is an overview; the first actionable layer leads. */
+.result { background: var(--wp-panel); border: 2px solid var(--wp-ink); border-radius: 6px; padding: var(--wp-6); display: grid; gap: var(--wp-4); min-width: 0; overflow-wrap: anywhere; }
+.result-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--wp-2); }
+.path { container: path / inline-size; padding: var(--wp-2) 0 0; }
+.path .is-idle .seg-num { margin-top: 12px; }
+@container path (max-width: 26rem) {
+  .path .seg-name, .path .seg-state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .path .assembly { --collar: 7px; }
+}
+.verdict { font: 500 clamp(1.5rem, 2.4vw, 2rem)/1.12 var(--wp-font-display); letter-spacing: -0.035em; }
+.verdict:focus-visible { outline-offset: 6px; }
 .verdict.empty { font: 400 1rem/1.6 var(--wp-font-body); letter-spacing: 0; color: var(--wp-muted); }
 .verdict .of { display: block; font: 400 1rem/1.5 var(--wp-font-body); letter-spacing: 0; margin-top: var(--wp-2); }
-.one-fix { border-left: 2px solid var(--wp-ink); padding-left: var(--wp-4); display: grid; gap: var(--wp-2); }
+.result[data-state="broken"] .verdict { color: var(--wp-ink); }
+.one-fix { border-left: 3px solid var(--wp-rust); background: #fff; padding: var(--wp-4); display: grid; gap: var(--wp-3); }
 .one-fix .label { color: var(--wp-ink); }
+.fix-warning { border-top: 1px solid var(--wp-hair); padding-top: var(--wp-3); font-size: 0.9375rem; }
 .cmd { position: relative; background: var(--wp-paper); border: 1px solid var(--wp-ink); }
 .cmd pre { margin: 0; padding: var(--wp-3); padding-right: 5.5rem; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.875rem; line-height: 1.45; }
 .copy { position: absolute; top: 0; right: 0; min-height: 40px; min-width: 48px; padding: 0 var(--wp-3); font: 600 var(--wp-text-meta)/1 var(--wp-font-body); background: var(--wp-panel); color: var(--wp-ink); border: 0; border-left: 1px solid var(--wp-ink); border-bottom: 1px solid var(--wp-ink); cursor: pointer; }
 
 .ledger { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--wp-ink); }
 .ledger:empty { display: none; }
-.row { padding: var(--wp-3) 0; border-bottom: 1px solid var(--wp-hair); display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0 var(--wp-3); }
+.row { padding: var(--wp-3) 0; border-bottom: 1px solid var(--wp-hair); display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0 var(--wp-3); scroll-margin-top: var(--wp-8); }
+.row:focus-visible { outline-offset: 2px; }
+.row.first { border-left: 3px solid var(--wp-rust); padding-left: var(--wp-3); margin-left: calc(-1 * var(--wp-3) - 3px); background: #fff; }
 .row .num { font-weight: 500; color: var(--wp-muted); padding-top: 3px; grid-column: 1; grid-row: 1 / span 9; }
 .row > :not(.num) { grid-column: 2; min-width: 0; }
 .row .hint.block { margin-top: var(--wp-2); }
@@ -149,18 +249,18 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 .row-name { font-weight: 600; }
 .row-msg { font-size: 1rem; }
 .row.dim .row-msg, .row.dim .row-name { color: var(--wp-muted); }
-.status { font: 500 var(--wp-text-cite)/1.2 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid transparent; white-space: nowrap; }
-.status.pass { background: var(--wp-cited); }
-.status.fail { background: var(--wp-flag); color: var(--wp-ink); border-color: var(--wp-rust); }
-.status.warn { color: var(--wp-rust); border-color: var(--wp-rust); }
+.status { font: 500 0.75rem/1.2 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 7px; border: 1px solid transparent; border-radius: var(--wp-pill); white-space: nowrap; }
+.status.pass { background: var(--ww-ice-tint); color: var(--ww-ice-deep); border-color: var(--ww-ice-deep); }
+.status.fail { background: var(--wp-rust); color: #fff; }
+.status.warn { color: var(--wp-amber); border-color: var(--wp-amber); }
 .status.cannot { color: var(--wp-rust); border: 1px dashed var(--wp-rust); }
 .status.skipped { color: var(--wp-muted); border-color: var(--wp-hair); }
 .row details { margin-top: var(--wp-2); }
-.row summary { cursor: pointer; color: var(--wp-muted); font-size: var(--wp-text-meta); min-height: 32px; display: inline-flex; align-items: center; }
+.row summary { cursor: pointer; color: var(--wp-muted); font-size: var(--wp-text-meta); min-height: var(--wp-tap); display: inline-flex; align-items: center; }
 .row details pre { margin: var(--wp-2) 0 0; padding: var(--wp-3); background: var(--wp-paper); border: 1px solid var(--wp-hair); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8125rem; line-height: 1.45; max-height: 16rem; overflow: auto; }
 .row .cmd { margin-top: var(--wp-2); }
 
-.feedback { border-top: 2px solid var(--wp-ink); padding-top: var(--wp-4); display: grid; gap: var(--wp-3); }
+.feedback { border-top: 1px solid var(--wp-ink); padding-top: var(--wp-4); display: grid; gap: var(--wp-3); }
 .feedback-q { font: 600 var(--wp-text-h3)/1.3 var(--wp-font-body); }
 .feedback-actions { display: flex; gap: var(--wp-3); flex-wrap: wrap; }
 /* Repair route: one quiet line after a result, secondary to the verdict, fix and feedback. */
@@ -175,12 +275,14 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
 .cannot-see li::before { content: "—"; position: absolute; left: 0; color: var(--wp-muted); }
 .after-list { margin-top: var(--wp-4); font-weight: 600; max-width: 40em; }
 
-/* footer */
-.site-footer { border-top: 2px solid var(--wp-ink); padding: var(--wp-8) 0 var(--wp-12); }
+/* footer: the shared graphite field */
+.site-footer { background: var(--oa-ground); color: var(--oa-paper); border-top: 1px solid var(--oa-line); padding: var(--wp-8) 0 var(--wp-12); }
 .site-footer .wrap { display: grid; gap: var(--wp-2); }
-.site-footer .muted { color: var(--wp-muted); }
+.site-footer a { color: var(--oa-paper); text-decoration-color: var(--oa-blue); }
+.site-footer a:hover { color: var(--oa-blue); }
+.site-footer .muted { color: var(--oa-muted); }
 .site-footer .links { display: flex; flex-wrap: wrap; gap: 0 var(--wp-6); }
-.site-footer .links a { min-height: var(--wp-tap); display: inline-flex; align-items: center; color: var(--wp-ink); font-weight: 600; }
+.site-footer .links a { min-height: var(--wp-tap); display: inline-flex; align-items: center; font-weight: 500; }
 
 @media (max-width: 900px) {
   .hero { padding: var(--wp-12) 0 var(--wp-16); }
@@ -188,11 +290,20 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
   .conflict, .tool, .limits { padding: var(--wp-12) 0; }
 }
 @media (max-width: 600px) {
+  .site-header .wrap { min-height: 64px; gap: var(--wp-4); }
+  .wordmark { font-size: 1.3125rem; }
+  .brand-link img { width: 30px; height: 30px; }
+  .brand { gap: 10px; }
+  .brand .product { padding-left: 10px; font-size: 0.9375rem; }
   .modes { grid-template-columns: 1fr; }
   .mode + .mode { border-left: 0; border-top: 2px solid var(--wp-ink); }
-  .layers-figure figcaption, .terms, .field code.read, .layer-map code { font-size: 1rem; }
+  .layers-figure figcaption, .terms { font-size: 1rem; }
   .field code.read, .layer-map code { font-size: 0.875rem; }
   .submit, .actions .btn { width: 100%; }
+  .specimen { padding: 22px 16px 26px; --seg-h: 48px; }
+  .specimen .assembly { --collar: 8px; }
+  .result { padding: var(--wp-4); }
+}
+@media (max-width: 370px) {
   .brand .product { display: none; }
-  .result, .layers-figure { padding: var(--wp-4); }
 }

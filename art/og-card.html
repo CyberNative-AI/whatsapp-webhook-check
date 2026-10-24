@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- Share card source for assets/og-card.png (1200x630). Rebuild with: node art/render-og.mjs
+     It reuses the page's own assembly styles, so the card shows the same object as the product.
+     The states are those of the page's recorded example: layers 1-2 pass, layer 3 broken, 4-5 not checked. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="og-card.css">
+</head>
+<body>
+  <main class="card">
+    <header class="card-top">
+      <span class="card-brand"><img src="../assets/cybernative-cn-mark.svg" alt="" width="44" height="44"><span class="wordmark">cybernative</span></span>
+      <span class="card-product">Webhook check</span>
+    </header>
+    <h1>Find the first broken layer between WhatsApp and&nbsp;n8n.</h1>
+    <ol class="assembly">
+      <li class="seg seg-1 is-pass"><span class="seg-body"><span class="lamp"></span></span><span class="seg-name">Callback URL</span><span class="seg-state">Pass</span></li>
+      <li class="seg seg-2 is-pass"><span class="seg-body"><span class="lamp"></span></span><span class="seg-name">WABA link</span><span class="seg-state">Pass</span></li>
+      <li class="seg seg-3 is-fail is-first"><span class="seg-body"><span class="lamp"></span></span><span class="seg-name">App webhook</span><span class="seg-state">Broken</span></li>
+      <li class="seg seg-4 is-skipped"><span class="seg-body"><span class="lamp"></span></span><span class="seg-name">Phone number</span><span class="seg-state">Not checked</span></li>
+      <li class="seg seg-5 is-skipped"><span class="seg-body"><span class="lamp"></span></span><span class="seg-name">Challenge</span><span class="seg-state">Not checked</span></li>
+    </ol>
+    <p class="card-foot">Free · runs in your browser · tested on recorded response shapes</p>
+  </main>
+</body>
+</html>
