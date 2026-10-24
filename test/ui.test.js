@@ -269,11 +269,18 @@ test('first screen: an example result, the maker and Source on GitHub; the weekl
       assert.equal(await page.textContent('#sample-result .sample-verdict'), `Broken at layer ${real.id}: ${real.name}`);
       assert.equal((await page.textContent('#sample-result .sample-fix')).replace(/^One fix\s*/, ''), real.fix);
       assert.match(await page.textContent('#sample-label'), /^Example result/);
-      const box = await page.locator('#sample-result').boundingBox();
-      assert.ok(box.y + box.height <= page.viewportSize().height, `${width}: sample ends at ${box.y + box.height}`);
-      const maker = page.locator('.maker a');
+      // Verdict and fix come first and end on the first screen; the inputs follow them.
+      for (const sel of ['.sample-verdict', '.sample-fix']) {
+        const box = await page.locator(`#sample-result ${sel}`).boundingBox();
+        assert.ok(box.y + box.height <= page.viewportSize().height, `${width}: ${sel} ends at ${box.y + box.height}`);
+      }
+      const order = await page.$$eval('#sample-result > *', kids => kids.map(k => k.className));
+      assert.deepEqual(order, ['sample-tag', 'sample-verdict', 'sample-fix', 'sample-inputs']);
+      const maker = page.locator('.maker a').first();
       assert.equal(await maker.textContent(), 'Made by CyberNative AI LLC, an AI-run company');
       assert.equal(await maker.getAttribute('href'), 'https://cybernative.ai/about/');
+      assert.equal(await page.getAttribute('.maker a.maker-check', 'href'), 'https://cybernative.ai/about/#how-we-check');
+      assert.equal((await page.textContent('.maker')).replace(/\s+/g, ' ').trim(), 'Made by CyberNative AI LLC, an AI-run company·How we check', 'Content\'s words, verbatim');
       const makerBox = await maker.boundingBox();
       assert.ok(makerBox.y + makerBox.height <= page.viewportSize().height, 'maker line on the first screen');
       assert.equal(await page.textContent('.site-header .source'), 'Source on GitHub');
@@ -286,23 +293,24 @@ test('first screen: an example result, the maker and Source on GitHub; the weekl
   }
 });
 
-// Every line of the byline link takes a 48 px tap: the rect and the hit test at its top and bottom edge both say so.
-const bylineTargets = page => page.evaluate(() => {
-  const a = document.querySelector('.maker a');
-  return [...a.getClientRects()].map(r => {
+// Each byline link takes a 48 px tap: the rect and the hit test at its top and bottom edge both say so.
+const bylineTargets = page => page.evaluate(() => [...document.querySelectorAll('.maker a')].map(a => {
+  const range = document.createRange(); range.selectNodeContents(a);
+  return { text: a.textContent, lines: new Set([...range.getClientRects()].map(r => Math.round(r.top))).size, boxes: [...a.getClientRects()].map(r => {
     const hits = y => { const e = document.elementFromPoint(r.left + Math.min(r.width / 2, 40), y); return !!e && a.contains(e); };
     return { height: r.height, top: hits(r.top + 1), bottom: hits(r.bottom - 1) };
-  });
-});
+  }) };
+}));
 
-test('48 px targets: the byline on every line and the header link; at 320 the header shows "GitHub" clear of the wordmark', async () => {
+test('48 px targets: each byline link and the header link; at 320 the header shows "GitHub" clear of the wordmark', async () => {
   for (const width of [320, 390, 1440]) {
     const { context, page } = await open(width);
     try {
       await page.evaluate(() => document.fonts.ready);
-      const lines = await bylineTargets(page);
-      if (width === 320) assert.equal(lines.length, 2, 'the byline wraps at 320');
-      for (const line of lines) assert.ok(line.height >= 48 && line.top && line.bottom, `${width}: ${JSON.stringify(line)}`);
+      const links = await bylineTargets(page);
+      assert.equal(links.length, 2);
+      for (const link of links) for (const box of link.boxes) assert.ok(box.height >= 48 && box.top && box.bottom, `${width}: ${link.text} ${JSON.stringify(box)}`);
+      assert.equal(links[1].lines, 1, `${width}: the second link is never split`);
       const header = page.getByRole('banner').getByRole('link', { name: 'Source on GitHub', exact: true });
       const box = await header.boundingBox();
       assert.ok(box.height >= 48, `${width}: header link ${box.height} px`);
@@ -436,4 +444,67 @@ test('the share card is a 1200x630 PNG and the page declares it so', async () =>
   assert.match(html, /og:image" content="https:\/\/cybernative-ai\.github\.io\/whatsapp-webhook-check\/assets\/og-card\.png"/);
   assert.match(html, /og:image:width" content="1200"/);
   assert.match(html, /og:image:height" content="630"/);
+});
+
+test('W1: the page states one input count, the same way in the lede, the reads line and the form', async () => {
+  const { context, page } = await open(1440);
+  try {
+    const text = sel => page.textContent(sel).then(t => t.replace(/\s+/g, ' ').trim());
+    const COUNT = 'three Graph API responses, plus an optional fourth for layer 3';
+    assert.ok((await text('.lede')).includes(`Paste ${COUNT}, and get one fix`));
+    assert.match(await text('.reads'), /^The three reads, .* The optional fourth, for layer 3, is GET \/\{APP_ID\}\/subscriptions, which needs an app token\./);
+    assert.match(await text('#check .sub'), /^Your IDs and URL first, then three responses, plus an optional fourth for layer 3\./);
+    const legends = await page.$$eval('#check-form legend', ls => ls.map(l => l.textContent.replace(/\s+/g, ' ').trim()));
+    assert.equal(legends[0], '1 Your IDs and URL They fill in the reads in step 2, and the check compares each response with them.');
+    assert.equal(legends[1], '2 What Meta returns Three responses, plus an optional fourth for layer 3.');
+    // Three paste boxes in step 2, and the fourth is the optional layer 3 read.
+    assert.equal(await page.locator('#paste-fields textarea').count(), 3);
+    assert.match(await text('label[for="subscriptions-json"]'), /^Layer 3 · App webhook, the optional fourth response/);
+    // The IDs really do fill in the reads.
+    await page.fill('#waba-id', '1001');
+    assert.equal(await page.textContent('code.read[data-read="waba"]'), 'GET /1001/subscribed_apps');
+  } finally { await context.close(); }
+});
+
+test('W1: the example panel shows the recorded inputs word for word, the failing one marked, under its verdict and fix', async () => {
+  const { check, firstBlocking } = await import('../engine.js');
+  const E = RECORDED_EXAMPLE, R = E.responses;
+  const blocking = firstBlocking(check(E));
+  const { context, page } = await open(1440);
+  try {
+    const lines = await page.$$eval('#sample-result .sample-reads li', lis => lis.map(li => ({
+      layer: li.dataset.sampleLayer, read: li.querySelector('.sr-read').textContent, value: li.querySelector('.sr-value').textContent,
+      broken: li.classList.contains('is-broken'), mark: li.querySelector('.sr-mark')?.textContent ?? null })));
+    assert.deepEqual(lines, [
+      { layer: '1', read: 'n8n Production URL', value: E.callbackUrl, broken: false, mark: null },
+      { layer: '2', read: `GET /${E.wabaId}/subscribed_apps`, value: `"id": "${R.wabaApps.data[0].whatsapp_business_api_data.id}"`, broken: false, mark: null },
+      { layer: '3', read: `GET /${E.appId}/subscriptions`, value: `"callback_url": "${R.appSubscriptions.data[0].callback_url}"`, broken: true, mark: 'Broken' },
+      { layer: '4', read: `GET /${E.phoneNumberId}?fields=…`, value: `"platform_type": "${R.phone.platform_type}"`, broken: false, mark: null },
+      { layer: '4', read: `GET /${E.wabaId}/phone_numbers`, value: `"id": "${R.wabaPhones.data[0].id}"`, broken: false, mark: null },
+    ]);
+    assert.equal(blocking.id, 3, 'the marked read is the layer the engine stops at');
+    assert.ok(R.appSubscriptions, 'the example includes the fourth response');
+    assert.match(await page.textContent('#sample-result .sample-inputs .sample-key'), /this example includes the fourth response/);
+    // Each line's read is one the page asks for.
+    const reads = await page.$$eval('code.read', cs => cs.map(c => c.dataset.read));
+    assert.deepEqual(reads, ['waba', 'phone', 'phones', 'subscriptions']);
+  } finally { await context.close(); }
+});
+
+test('W2: layer 3 is checked only when its response is pasted, and the two orders are connected', async () => {
+  const { check } = await import('../engine.js');
+  const { appSubscriptions, ...three } = RECORDED_EXAMPLE.responses;
+  assert.equal(check({ ...RECORDED_EXAMPLE, responses: three })[2].status, 'not checked');
+  assert.equal(check(RECORDED_EXAMPLE)[2].status, 'fail');
+  // A WABA override counts only when the phone number has no override of its own.
+  const override = { data: [{ whatsapp_business_api_data: { id: RECORDED_EXAMPLE.appId }, override_callback_uri: 'https://other.example.com/hook' }] };
+  const phone = own => ({ ...RECORDED_EXAMPLE.responses.phone, webhook_configuration: own ? { phone_number: RECORDED_EXAMPLE.callbackUrl } : {} });
+  assert.equal(check({ ...RECORDED_EXAMPLE, responses: { ...three, wabaApps: override, phone: phone(true) } })[1].status, 'pass');
+  assert.equal(check({ ...RECORDED_EXAMPLE, responses: { ...three, wabaApps: override, phone: phone(false) } })[1].status, 'fail');
+  const { context, page } = await open(1440);
+  try {
+    assert.equal((await page.textContent('.layer-map li:nth-child(3) b')).replace(/\s+/g, ' '), 'App webhook · optional: checked when you paste its response');
+    assert.match(await page.textContent('.layers-figure figcaption'), /The two orders meet here: a WABA override \(layer 2\) counts only when the phone number \(layer 4\) has no override of its own, so the check uses the layer 4 read to judge layer 2\./);
+    assert.equal(await page.textContent('#tested-limit'), 'Limit Tested on recorded response shapes, not a live WhatsApp account.');
+  } finally { await context.close(); }
 });

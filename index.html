@@ -37,16 +37,26 @@
         <div class="hero-copy">
           <p class="label"><b>Webhook check</b> · free · runs in your browser</p>
           <h1>Find the first broken layer between WhatsApp and&nbsp;n8n.</h1>
-          <p class="maker"><a href="https://cybernative.ai/about/">Made by CyberNative AI LLC, an AI-run company</a></p>
-          <p class="lede">For a WhatsApp Trigger that gets nothing while Meta shows the event, or that stops with “The WhatsApp App ID … already has a webhook subscription.” Paste three Graph API responses and get one fix for the first broken layer.</p>
+          <p class="maker"><a href="https://cybernative.ai/about/">Made by CyberNative AI LLC, an AI-run company</a><span class="maker-more"><span class="maker-sep" aria-hidden="true">·</span><a class="maker-check" href="https://cybernative.ai/about/#how-we-check">How we check</a></span></p>
+          <p class="lede">For a WhatsApp Trigger that gets nothing while Meta shows the event, or that stops with “The WhatsApp App ID … already has a webhook subscription.” Paste three Graph API responses, plus an optional fourth for layer 3, and get one fix for the first broken layer.</p>
           <div class="actions"><a class="btn btn-primary" href="#check">Check my setup</a><button type="button" class="btn btn-quiet load-example" id="load-example" hidden>Try a recorded example</button></div>
           <div class="sample" id="sample-result" role="group" aria-labelledby="sample-label">
             <p class="sample-tag" id="sample-label">Example result <span>· synthetic data</span></p>
             <p class="sample-verdict">Broken at layer 3: App webhook subscription</p>
             <p class="sample-fix"><span class="sample-key">One fix</span> In the n8n editor stop test listening, then publish the workflow so n8n registers the Production URL.</p>
+            <div class="sample-inputs">
+              <p class="sample-key">What it was given <span>· this example includes the fourth response</span></p>
+              <ol class="sample-reads">
+                <li data-sample-layer="1"><span class="sr-num">1</span><span class="sr-read">n8n Production URL</span><code class="sr-value">https://n8n.example.com/<wbr>webhook/<wbr>abc</code></li>
+                <li data-sample-layer="2"><span class="sr-num">2</span><code class="sr-read">GET /1001/subscribed_apps</code><code class="sr-value">"id": "2002"</code></li>
+                <li data-sample-layer="3" class="is-broken"><span class="sr-num">3</span><code class="sr-read">GET /2002/subscriptions</code><code class="sr-value">"callback_url": "https://n8n.example.com/<wbr>webhook-test/<wbr>abc"</code><span class="sr-mark">Broken</span></li>
+                <li data-sample-layer="4"><span class="sr-num">4</span><code class="sr-read">GET /3003?fields=…</code><code class="sr-value">"platform_type": "CLOUD_API"</code></li>
+                <li data-sample-layer="4"><span class="sr-num">4</span><code class="sr-read">GET /1001/phone_numbers</code><code class="sr-value">"id": "3003"</code></li>
+              </ol>
+            </div>
           </div>
           <p class="limit" id="tested-limit"><span class="label-limit">Limit</span> Tested on recorded response shapes, not a live WhatsApp account.</p>
-          <p class="reads">The three reads, run in Meta’s Graph API Explorer: <code>GET /{WABA_ID}/subscribed_apps</code>, <code>GET /{PHONE_NUMBER_ID}</code> and <code>GET /{WABA_ID}/phone_numbers</code>. Layer 3 adds an optional fourth, <code>GET /{APP_ID}/subscriptions</code>, which needs an app token. WABA is your WhatsApp Business Account.</p>
+          <p class="reads">The three reads, run in Meta’s Graph API Explorer: <code>GET /{WABA_ID}/subscribed_apps</code>, <code>GET /{PHONE_NUMBER_ID}</code> and <code>GET /{WABA_ID}/phone_numbers</code>. The optional fourth, for layer 3, is <code>GET /{APP_ID}/subscriptions</code>, which needs an app token. WABA is your WhatsApp Business Account.</p>
           <ul class="terms">
             <li>Paste mode: your token stays in Meta’s tool</li>
             <li>Stores nothing</li>
@@ -62,7 +72,7 @@
           <ol class="layer-map">
             <li><span class="num">1</span><span><b>Callback URL</b><code>public HTTPS, /webhook/</code></span></li>
             <li><span class="num">2</span><span><b>WABA → app link <i>· WABA override</i></b><code>GET /{WABA_ID}/subscribed_apps</code></span></li>
-            <li><span class="num">3</span><span><b>App webhook <i>· optional</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
+            <li><span class="num">3</span><span><b>App webhook <i>· optional: checked when you paste its response</i></b><code>GET /{APP_ID}/subscriptions</code></span></li>
             <li><span class="num">4</span><span><b>Phone number <i>· phone override</i></b><code>GET /{PHONE_NUMBER_ID}</code></span></li>
             <li><span class="num">5</span><span><b>Challenge</b><code>a curl you run yourself</code></span></li>
           </ol>
@@ -74,7 +84,7 @@
               <li>A WABA override URL, if one is set</li>
               <li>Your app’s webhook</li>
             </ol>
-            <p>So a set override gets the messages instead of your app’s webhook. That is why the check reads both overrides. It never contacts your n8n and never writes to Meta.</p>
+            <p>So a set override gets the messages instead of your app’s webhook. That is why the check reads both overrides. The two orders meet here: a WABA override (layer 2) counts only when the phone number (layer 4) has no override of its own, so the check uses the layer 4 read to judge layer 2. It never contacts your n8n and never writes to Meta.</p>
           </figcaption>
         </figure>
       </div>
@@ -102,7 +112,7 @@
         <div class="tool-head">
           <p class="label"><b>The check</b></p>
           <h2 id="check-title">Check your setup</h2>
-          <p class="sub">Everything runs in this tab. In paste mode the page makes no network requests.</p>
+          <p class="sub">Your IDs and URL first, then three responses, plus an optional fourth for layer 3. Everything runs in this tab. In paste mode the page makes no network requests.</p>
           <div class="example" id="example-bar" hidden>
             <button type="button" class="btn btn-quiet load-example">Load a recorded example</button>
             <p class="hint">Fills the form with synthetic IDs and Graph responses recorded from public reports, then runs the check. Nothing is sent or stored.</p>
@@ -122,7 +132,7 @@
           <form id="check-form" novalidate>
             <p class="recorded-note" id="recorded-note" hidden><span class="tag">Recorded example</span> The form holds synthetic data, not your account. Replace any field with your own, or <button type="button" class="text-button" id="example-clear">clear the form</button>.</p>
             <fieldset class="step">
-              <legend><span class="step-num">1</span> Your IDs and URL</legend>
+              <legend><span class="step-num">1</span> Your IDs and URL <span class="hint">They fill in the reads in step 2, and the check compares each response with them.</span></legend>
               <label class="field" for="waba-id">WhatsApp Business Account ID <span class="hint">Meta App Dashboard › WhatsApp › API Setup.</span></label>
               <input id="waba-id" required inputmode="numeric" pattern="[0-9]+" autocomplete="off" spellcheck="false">
               <label class="field" for="app-id">App ID <span class="hint">The Client ID in your n8n WhatsApp credential.</span></label>
@@ -134,7 +144,7 @@
             </fieldset>
 
             <fieldset class="step">
-              <legend><span class="step-num">2</span> What Meta returns</legend>
+              <legend><span class="step-num">2</span> What Meta returns <span class="hint">Three responses, plus an optional fourth for layer 3.</span></legend>
               <div class="modes" role="radiogroup" aria-label="How to read Meta">
                 <label class="mode"><input type="radio" name="mode" value="paste" checked> Paste JSON (no token)</label>
                 <label class="mode"><input type="radio" name="mode" value="token"> Use a token (GET only)</label>
@@ -157,7 +167,7 @@
               </div>
 
               <div class="optional">
-                <label class="field" for="subscriptions-json">Layer 3 · App webhook, optional <code class="read" data-read="subscriptions">GET /{APP_ID}/subscriptions</code></label>
+                <label class="field" for="subscriptions-json">Layer 3 · App webhook, the optional fourth response <code class="read" data-read="subscriptions">GET /{APP_ID}/subscriptions</code></label>
                 <p class="hint block" id="layer3-note">This read needs an app token, so run it in Graph API Explorer (choose Get App Token) and paste the JSON. Never paste an app secret or app token into this page.</p>
                 <textarea id="subscriptions-json" spellcheck="false" aria-describedby="layer3-note" placeholder='{"data": [ … ]}'></textarea>
               </div>

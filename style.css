@@ -94,12 +94,16 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .limit { border-left: 2px solid var(--wp-rust); padding-left: var(--wp-4); max-width: 36em; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--wp-3); }
 /* Byline under the headline: who made the tool. */
-.maker { margin-top: calc(-1 * var(--wp-3)); font-size: var(--wp-text-meta); font-weight: 500; }
-/* The byline link is inline: padding grows its hit area to 48 px on each line, and the matching negative inline margin
-   keeps the text and its wrapping where they were. The focus ring is pulled back to 2 px around the text so it stays
-   clear of the h1 and the lede. */
-.maker a { padding: 15px; margin-inline: -15px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.maker { display: flex; flex-wrap: wrap; align-items: flex-start; margin: calc(-1 * var(--wp-3) - 15px) 0 -15px; font-size: var(--wp-text-meta); font-weight: 500; }
+/* Two byline links, each a flex item: 15 px padding makes each box 48 px or more on its own row, and the matching
+   negative margins keep the text where it was. When the line is too narrow the second link moves to its own row,
+   whole. The focus ring is pulled back to 2 px around the text so it stays clear of the h1 and the lede. */
+.maker a { padding: 15px; margin-inline: -15px; }
 .maker a:focus-visible { outline-offset: -13px; }
+.maker-more { display: flex; align-items: center; white-space: nowrap; }
+.maker-sep { margin-inline: 0.5em; }
+/* Below 480 px the line cannot hold both links: the second takes its own row, without the separator. */
+@media (max-width: 480px) { .maker-more { flex-basis: 100%; } .maker-sep { display: none; } }
 /* A static sample of the recorded example's real output. Dashed and tagged so it never reads as the visitor's own
    result; page.js hides it once a real result renders. */
 .sample { max-width: 36em; display: grid; gap: var(--wp-2); padding: var(--wp-3) var(--wp-4); border: 1px dashed var(--wp-muted); border-radius: var(--wp-radius); background: var(--wp-panel); }
@@ -108,6 +112,18 @@ code { font-size: 0.9375em; overflow-wrap: anywhere; }
 .sample-verdict { font-weight: 600; line-height: 1.35; }
 .sample-fix { font-size: 0.9375rem; line-height: 1.5; }
 .sample-key { margin-right: .5em; }
+/* The example's inputs, under its verdict and fix: one line per read, layer number first, then the read and the field
+   the check looked at. Read and field share a row when there is room. */
+.sample-inputs { display: grid; gap: var(--wp-2); padding-top: var(--wp-3); border-top: 1px solid var(--wp-hair); }
+.sample-inputs .sample-key span { color: var(--wp-muted); }
+.sample-reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--wp-text-cite); line-height: 1.45; }
+.sample-reads li { display: grid; grid-template-columns: 1.25rem 12.5rem minmax(0, 1fr) auto; column-gap: var(--wp-2); align-items: baseline; }
+.sr-num { font: 500 var(--wp-text-cite)/1.45 var(--wp-font-mono); color: var(--wp-muted); }
+.sr-read { color: var(--wp-muted); }
+.sr-value { color: var(--wp-ink); overflow-wrap: anywhere; }
+.sr-mark { font: 500 var(--wp-text-cite)/1.45 var(--wp-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--wp-rust); }
+.is-broken .sr-num { color: var(--wp-rust); }
+.is-broken .sr-value { box-shadow: inset 2px 0 0 var(--wp-rust); padding-left: var(--wp-2); }
 .reads { max-width: 36em; color: var(--wp-muted); font-size: 0.9375rem; line-height: 1.5; }
 .reads code { color: var(--wp-ink); white-space: nowrap; }
 .terms { display: flex; flex-wrap: wrap; gap: var(--wp-2) var(--wp-6); margin: 0; padding: var(--wp-4) 0 0; border-top: 1px solid var(--wp-hair); list-style: none; color: var(--wp-muted); font-size: var(--wp-text-meta); font-weight: 500; }
@@ -202,6 +218,8 @@ form { display: grid; gap: var(--wp-8); min-width: 0; }
 .step { border: 0; border-top: 1px solid var(--wp-ink); margin: 0; padding: var(--wp-4) 0 0; min-width: 0; }
 .step legend { font: 600 var(--wp-text-h3)/1.3 var(--wp-font-body); padding: 0; display: flex; align-items: center; gap: var(--wp-3); float: left; width: 100%; margin-bottom: var(--wp-2); }
 .step legend + * { clear: both; }
+.step legend { flex-wrap: wrap; row-gap: 0; }
+.step legend .hint { flex-basis: 100%; font-size: var(--wp-text-meta); line-height: 1.5; }
 .step-num { font: 500 var(--wp-text-cite)/1 var(--wp-font-mono); display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--wp-ink); border-radius: 50%; flex: none; }
 .field { display: block; margin: var(--wp-4) 0 var(--wp-2); font-weight: 600; clear: both; }
 .field .hint { display: block; font-weight: 400; }
@@ -308,6 +326,15 @@ input[aria-invalid="true"] { border-color: var(--wp-rust); }
   .conflict, .tool, .limits { padding: var(--wp-12) 0; }
 }
 @media (max-width: 600px) {
+  /* The example's verdict and fix on the first screen at 390 x 844, under the two-row byline; its inputs follow. */
+  .hero { padding-top: var(--wp-6); }
+  .hero-copy { gap: var(--wp-4); }
+  .maker { margin-top: calc(-4px - 15px); }
+  .sample-reads li { grid-template-columns: 1.25rem minmax(0, 1fr) auto; }
+  .sr-num { grid-row: span 2; }
+  .sr-read { grid-column: 2; }
+  .sr-value { grid-column: 2; }
+  .sr-mark { grid-column: 3; grid-row: 1; }
   .site-header .wrap { min-height: 64px; gap: var(--wp-4); }
   .wordmark { font-size: 1.3125rem; }
   .brand-link img { width: 30px; height: 30px; }
